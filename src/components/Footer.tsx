@@ -195,15 +195,7 @@ export default function Footer({ setHash }: FooterProps) {
                   Shopee: jiwamu_store
                 </a>
               </li>
-              <li className="pt-3.5 mt-3 border-t border-slate-800">
-                <button 
-                  onClick={() => navigateTo("admin")} 
-                  className="hover:text-[#FFD600] hover:border-[#FFD600] transition-all flex items-center gap-2 text-slate-400 text-xs font-black uppercase tracking-wider cursor-pointer bg-black/50 border border-slate-800 px-3 py-2 rounded-xl"
-                >
-                  <Radio className="w-4 h-4" />
-                  Admin Console
-                </button>
-              </li>
+
             </ul>
           </div>
 
