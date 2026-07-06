@@ -1,0 +1,6 @@
+{
+  "name": "Jiwamu",
+  "description": "Ekosistem kesehatan mental dan media digital berbasis teori kelekatan (attachment) untuk generasi muda (Gen Z dan Milenial).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
