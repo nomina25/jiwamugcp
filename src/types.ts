@@ -36,6 +36,7 @@ export interface Proyek {
 }
 
 export interface Trainer {
+  id?: string;
   nama: string;
   gelar: string;
   pengalaman: string;
@@ -43,6 +44,7 @@ export interface Trainer {
 }
 
 export interface Pendamping {
+  id?: string;
   nama: string;
   pengalaman: string;
   keahlian: string[];
@@ -68,6 +70,7 @@ export interface Artikel {
   tanggal: string;
   kategori: string;
   bacaMilik: string; // reading time, e.g. "5 min"
+  imageUrl?: string; // Illustration/visual
 }
 
 export interface VideoItem {
@@ -86,4 +89,29 @@ export interface UnduhanItem {
   format: string;
   url: string;
   deskripsi: string;
+  imageUrl?: string; // Illustration/visual
 }
+
+export interface ClassItem {
+  id: string;
+  code: string;
+  level: string;
+  title: string;
+  desc: string;
+  price: string;
+  investment: string;
+  rekeningBank: string;
+  duration: string;
+  jadwal: { city: string; hotel: string; date: string }[];
+  materi: string[];
+  competence: string[];
+}
+
+export interface AdminUser {
+  email: string;
+  passwordHash: string;
+  nama: string;
+  role: "superadmin" | "editor";
+  createdAt: string;
+}
+

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { initialPendampingList } from "../data/layanan";
 import { Search, Heart, Shield, Check, Send, ChevronDown, ChevronUp, Star, Filter } from "lucide-react";
+import { Pendamping } from "../types";
 
-export default function Layanan() {
+export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKeahlian, setSelectedKeahlian] = useState("Semua");
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
@@ -14,7 +14,7 @@ export default function Layanan() {
 
   // Get unique list of specialties (keahlian)
   const allKeahlian = ["Semua"];
-  initialPendampingList.forEach((p) => {
+  pamongList.forEach((p) => {
     p.keahlian.forEach((k) => {
       if (!allKeahlian.includes(k)) {
         allKeahlian.push(k);
@@ -22,7 +22,7 @@ export default function Layanan() {
     });
   });
 
-  const filteredPendamping = initialPendampingList.filter((p) => {
+  const filteredPendamping = pamongList.filter((p) => {
     const matchesSearch = p.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.keahlian.some(k => k.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesKeahlian = selectedKeahlian === "Semua" || p.keahlian.includes(selectedKeahlian);

@@ -5,10 +5,164 @@ import { Award, BookOpen, Clock, CreditCard, HelpCircle, MapPin, Users, CheckCir
 interface KelasProps {
   currentHash: string;
   setHash: (hash: string) => void;
+  classesList?: any[];
+  trainersList?: any[];
 }
 
-export default function Kelas({ currentHash, setHash }: KelasProps) {
+const defaultClasses = [
+  {
+    id: "caf",
+    code: "CAF",
+    level: "Level 1",
+    title: "Certification in Attachment Facilitator",
+    desc: "Dalam pelatihan ini, kamu akan mempelajari dasar-dasar attachment untuk membaca pola relasi, memahami kebutuhan emosional, mengelola konflik, dan merespons orang lain dengan lebih tepat: kapan cukup hadir dan mendengarkan, kapan perlu memberi arahan.",
+    price: "Rp 2.500.000",
+    investment: "Rp 2.500.000",
+    rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+    duration: "1 Hari Penuh (9 Jam intensif)",
+    jadwal: [
+      { city: "Malang", hotel: "Grand Cakra Hotel", date: "Sabtu, 11 Juli 2026" },
+      { city: "Jakarta", hotel: "Santika Premier", date: "Sabtu, 11 Juli 2026" },
+      { city: "Yogyakarta", hotel: "Melia Purosani", date: "Sabtu, 11 Juli 2026" },
+      { city: "Bandung", hotel: "de Braga by ARTOTEL", date: "Sabtu, 11 Juli 2026" }
+    ],
+    materi: [
+      "Home Is Where We Start From", "What is Attachment?", "Brief History of Attachment Studies",
+      "Attachment and Loss", "Safe Haven dan Secure Base", "Read Before Respond (RBR)",
+      "RBR Diagnostic Pathway", "Skill 1: Read Before Respond (RBR)", "Attachment Systems",
+      "Attachment Pattern", "Internal Working Models", "Attachment Style", "ECR-R",
+      "Skill 2: Measuring", "Attachment Rupture", "Dimensions of Wound", "Attachment Wound Cycle",
+      "Window of Tolerance", "Skill 3: 4-Step Window", "Attachment Secure Cycle", "Rupture-Repair",
+      "Skill 4: 4-Step Repair", "Secure Repetition Principle"
+    ],
+    competence: [
+      "Memahami kebutuhan terdalam manusia akan rasa aman",
+      "Menyelami pola bawah sadar yang membentuk caramu mencintai dan menjalin relasi",
+      "Menguasai pendekatan yang tepat: kapan mendengarkan dan kapan memberikan arahan?",
+      "Mengurai kekuatan dan tantangan dari setiap gaya attachment",
+      "Mengidentifikasi kecenderungan gaya attachment (langsung asesmen di kelas)",
+      "Memahami akar konflik, kecemburuan, ketakutan ditinggalkan, dan pola menjauh dalam hubungan",
+      "Mendeteksi, mencegah, dan memperbaiki berbagai bentuk masalah dengan pasangan, keluarga, dan pertemanan."
+    ]
+  },
+  {
+    id: "cac",
+    code: "CAC",
+    level: "Level 2",
+    title: "Certification in Attachment Coaching",
+    desc: "Kelas ini merupakan pelatihan lanjutan bagi peserta yang telah menyelesaikan Certification in Attachment Facilitator (CAF). Program ini dirancang untuk membantu peserta memahami berbagai kebutuhan attachment di setiap rentang usia, bagaimana luka attachment terbentuk, bagaimana ia hidup dalam cerita diri, dan bagaimana pola tidak aman terus berulang dalam hubungan.",
+    price: "Rp 3.000.000",
+    investment: "Rp 3.000.000",
+    rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+    duration: "1 Hari Penuh (9 Jam intensif)",
+    jadwal: [
+      { city: "Malang", hotel: "Grand Cakra Hotel", date: "Minggu, 12 Juli 2026" },
+      { city: "Jakarta", hotel: "Santika Premier", date: "Minggu, 12 Juli 2026" },
+      { city: "Yogyakarta", hotel: "Melia Purosani", date: "Minggu, 12 Juli 2026" },
+      { city: "Bandung", hotel: "de Braga by ARTOTEL", date: "Minggu, 12 Juli 2026" }
+    ],
+    materi: [
+      "Remembering Attachment Systems", "Dimensions of Wound", "Defensive Strategy",
+      "IWM: The Meaning of Rupture", "Fear: The Threat of Rupture", "Shame: The Self in Rupture",
+      "Self-Fulfilling Prophecy", "Attachment Narrative", "Fundamental Rule", "Mentalization",
+      "Healing Journey", "Informed Consent", "Framework and Setting", "Attachment Screen-Replay (ASR)",
+      "Hypno-Introspection", "Mirror-Image Technique", "Breaking Narrative Thought",
+      "Narrative Defusion", "(M)other Expectation", "Creative-Aggression Technique",
+      "Emotional Attunement", "Separation Dialogue", "Instigation Technique"
+    ],
+    competence: [
+      "Memahami blueprint yang membentuk caramu melihat diri dan orang lain",
+      "Mengidentifikasi luka attachment yang memengaruhi pola hubunganmu saat ini",
+      "Membaca struktur “lingkaran ketakutan” yang mengaktifkan reaksi otomatis dalam konflik",
+      "Mengurai bagaimana siklus tidak aman terbentuk dan mengapa ia terus berulang",
+      "Membangun 'lingkaran aman' sebagai pola relasi yang lebih sehat",
+      "Menguasai teknik merekonstruksi narasi hidup agar tidak lagi terjebak pada cerita lama",
+      "Menerapkan berbagai teknik healing untuk meningkatkan kesadaran dan kepekaan."
+    ]
+  },
+  {
+    id: "cabp",
+    code: "CABP",
+    level: "Level 3",
+    title: "Certification in Attachment-Based Practitioner",
+    desc: "Kelas ini adalah level tertinggi dalam jalur sertifikasi Jiwamu. Program ini dirancang bagi peserta yang telah memiliki pemahaman mengenai Attachment Facilitating dan Attachment Coaching, serta ingin mengembangkan kompetensi praktik berbasis attachment dalam berbagai bidang kehidupan.",
+    price: "Rp 13.000.000",
+    investment: "Rp 13.000.000",
+    rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+    duration: "3 Bulan (100 Jam Pembelajaran)",
+    jadwal: [
+      { city: "Yogyakarta", hotel: "Melia Purosani", date: "Sabtu, 22 Agustus 2026" }
+    ],
+    materi: [
+      "Modul 1 – Writing for Publication", "Modul 2 – Attachment and Mental Health",
+      "Modul 3 – Attachment and Education", "Modul 4 – Attachment and Workplace",
+      "Modul 5 – Attachment and Parenting", "Modul 6 – Attachment and Romantic Relationship",
+      "Modul 7 – Attachment and Spirituality", "Modul 8 – Attachment and Money",
+      "Modul 9 – Attachment and Social Justice", "Modul 10 – Start Your Practice!"
+    ],
+    competence: [
+      "Praktik klinis profesional terstandarisasi",
+      "Mampu merancang modul pendampingan berbasis riset",
+      "Akses menulis di platform dan media Jiwamu",
+      "Kompetensi advokasi keadilan sosial",
+      "Pemahaman mendalam attachment lintas disiplin ilmu"
+    ]
+  },
+  {
+    id: "professionalbridging",
+    code: "BRIDGING",
+    level: "Special Path",
+    title: "CABP Professional Bridging Program",
+    desc: "Program jalur khusus untuk psikolog (HIMPSI), psikolog klinis (IPK.ID), dokter (IDI), psikoanalis (API), konselor (IKI), perawat (PPNI), bidan (IBI), kesehatan masyarakat (IAKMI), hipnoterapis (PKHI dan PRAHIPTI), dan coach (ICF).",
+    price: "Rp 15.000.000",
+    investment: "Rp 15.000.000",
+    rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+    duration: "Program Khusus",
+    jadwal: [
+      { city: "Jakarta", hotel: "Online & Offline Modular", date: "Sesuai Pendaftaran" }
+    ],
+    materi: [
+      "Integrasi Klinis & Attachment", "Metodologi Asesmen Lanjut", "Supervisi Kasus Komplex"
+    ],
+    competence: [
+      "Integrasi metodologi attachment dalam praktik profesional",
+      "Supervisi klinis mandiri"
+    ]
+  },
+  {
+    id: "writinglab",
+    code: "WRITINGLAB",
+    level: "Bootcamp",
+    title: "Jiwamu Writing Lab",
+    desc: "Kelas untuk mendampingi para pemengaruh, pemerhati, dan profesional kesehatan mental dalam menulis untuk buku dari pengembangan ide hingga naskah siap diterbitkan.",
+    price: "Rp 500.000",
+    investment: "Rp 500.000",
+    rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+    duration: "Bootcamp Inkubasi",
+    jadwal: [
+      { city: "Yogyakarta", hotel: "Creative Space Hub", date: "Juli - Agustus 2026" }
+    ],
+    materi: [
+      "Inkubasi Ide & Premise", "Seni Menulis Reflektif", "Publishing Industry 101"
+    ],
+    competence: [
+      "Pembuatan naskah buku siap terbit",
+      "Teknik penulisan populer & ilmiah"
+    ]
+  }
+];
+
+export default function Kelas({ currentHash, setHash, classesList = [], trainersList = [] }: KelasProps) {
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
+
+  const getClassData = (id: string) => {
+    const fallback = defaultClasses.find(c => c.id === id);
+    if (classesList && classesList.length > 0) {
+      const cls = classesList.find(c => c.id === id);
+      return cls || fallback;
+    }
+    return fallback;
+  };
 
   const toggleFaq = (idx: number) => {
     setFaqOpen({ ...faqOpen, [idx]: !faqOpen[idx] });
@@ -19,11 +173,11 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const trainers = [
-    { nama: "Fakhrun Siraj, CABP", exp: "Berpengalaman 10+ tahun", desc: "Penulis, editor, dan penerjemah dari 75+ buku", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop" },
-    { nama: "Cin Hapsari Tomoidjojo, CABP", exp: "Berpengalaman 10+ tahun", desc: "Penulis buku What the Wound Knows", foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop" },
-    { nama: "Muhammad Syibbli Z., CABP", exp: "Berpengalaman 10+ tahun", desc: "Spesialis nilai hidup dan kelekatan", foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop" },
-    { nama: "Juan Lee (Yen), CABP", exp: "Berpengalaman 10+ tahun", desc: "Spesialis dinamika kelekatan sosial", foto: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop" }
+  const trainers = trainersList && trainersList.length > 0 ? trainersList : [
+    { id: "tr-01", nama: "Fakhrun Siraj, CABP", exp: "Berpengalaman 10+ tahun", desc: "Penulis, editor, dan penerjemah dari 75+ buku", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop" },
+    { id: "tr-02", nama: "Cin Hapsari Tomoidjojo, CABP", exp: "Berpengalaman 10+ tahun", desc: "Penulis buku What the Wound Knows", foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop" },
+    { id: "tr-03", nama: "Muhammad Syibbli Z., CABP", exp: "Berpengalaman 10+ tahun", desc: "Spesialis nilai hidup dan kelekatan", foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop" },
+    { id: "tr-04", nama: "Juan Lee (Yen), CABP", exp: "Berpengalaman 10+ tahun", desc: "Spesialis dinamika kelekatan sosial", foto: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop" }
   ];
 
   // SUBPAGE: LEVEL 1 - CAF (Attachment Facilitator)
@@ -58,19 +212,33 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
       { q: "Mengapa saya perlu belajar Attachment bersama Jiwamu?", a: "Karena di Jiwamu, kamu tidak hanya mengikuti kelas lalu selesai. Kamu akan masuk ke dalam ekosistem belajar dan komunitas yang terus bertumbuh melalui komunitas alumni, pertemuan nasional, media dan majalah, pengembangan profesional, hingga peluang menjadi penulis, coach, trainer, atau partner Jiwamu." }
     ];
 
+    const classData = getClassData("caf") || {
+      title: "Certification in Attachment Facilitator",
+      desc: "Dalam pelatihan ini, kamu akan mempelajari dasar-dasar attachment untuk membaca pola relasi, memahami kebutuhan emosional, mengelola konflik, dan merespons orang lain dengan lebih tepat: kapan cukup hadir dan mendengarkan, kapan perlu memberi arahan.",
+      investment: "Rp 2.500.000",
+      rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+      duration: "1 Hari Penuh (9 Jam intensif)",
+      jadwal: [
+        { city: "Malang", hotel: "Grand Cakra Hotel", date: "Sabtu, 11 Juli 2026" },
+        { city: "Jakarta", hotel: "Santika Premier", date: "Sabtu, 11 Juli 2026" },
+        { city: "Yogyakarta", hotel: "Melia Purosani", date: "Sabtu, 11 Juli 2026" },
+        { city: "Bandung", hotel: "de Braga by ARTOTEL", date: "Sabtu, 11 Juli 2026" }
+      ]
+    };
+
     return (
-      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16">
+      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16 animate-fade-in">
         {/* Back Link */}
         <button onClick={() => navigateTo("kelas")} className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
           ← Kembali ke Sertifikasi
         </button>
-
+ 
         {/* Hero */}
         <div className="space-y-6">
           <span className="bg-blue-50 text-blue-600 text-xxs font-mono font-bold px-3 py-1 rounded-full">Level 1 · CAF</span>
-          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Certification in Attachment Facilitator</h1>
+          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{classData.title}</h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl">
-            Dalam pelatihan ini, kamu akan mempelajari dasar-dasar attachment untuk membaca pola relasi, memahami kebutuhan emosional, mengelola konflik, dan merespons orang lain dengan lebih tepat: kapan cukup hadir dan mendengarkan, kapan perlu memberi arahan.
+            {classData.desc}
           </p>
           <p className="text-slate-500 text-xs sm:text-sm">
             Program ini cocok untuk kamu yang ingin memahami diri, memperbaiki hubungan, atau mulai mengembangkan keterampilan dasar dalam membantu sesama.
@@ -116,15 +284,13 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
           <div className="border border-slate-100 rounded-3xl p-8 space-y-6 bg-white flex flex-col justify-between">
             <div className="space-y-4">
               <span className="text-xxs font-mono font-bold text-slate-400 uppercase tracking-widest block">INVESTASI PELATIHAN</span>
-              <h3 className="font-sans text-3xl font-bold text-slate-900 font-mono">Rp 2.500.000</h3>
+              <h3 className="font-sans text-3xl font-bold text-slate-900 font-mono">{classData.investment}</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Durasi: 1 Hari Penuh (9 Jam intensif). Format padat, aplikatif, langsung dapat diterapkan.
+                Durasi: {classData.duration}. Format padat, aplikatif, langsung dapat diterapkan.
               </p>
               <div className="bg-slate-50 p-4 rounded-2xl text-xxs text-slate-600 space-y-1.5 border border-slate-100">
                 <p className="font-semibold text-slate-700">Pembayaran melalui Transfer:</p>
-                <p className="font-mono">Bank Mandiri No. Rekening:</p>
-                <p className="font-mono text-sm font-bold text-slate-900">1410039881313</p>
-                <p className="font-semibold text-slate-700">An. Yayasan Pusat Psikoanalisis Indonesia</p>
+                <p className="text-slate-900 font-medium font-mono whitespace-pre-line">{classData.rekeningBank}</p>
               </div>
             </div>
             <p className="text-xxs text-amber-600 font-semibold">* Hubungi kami untuk penawaran harga kelompok terbaik.</p>
@@ -172,12 +338,7 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
         <div className="space-y-6">
           <h2 className="font-sans text-sm font-semibold uppercase tracking-wider text-blue-600">Jadwal Terdekat</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { city: "Malang", hotel: "Grand Cakra Hotel", date: "Sabtu, 11 Juli 2026" },
-              { city: "Jakarta", hotel: "Santika Premier", date: "Sabtu, 11 Juli 2026" },
-              { city: "Yogyakarta", hotel: "Melia Purosani", date: "Sabtu, 11 Juli 2026" },
-              { city: "Bandung", hotel: "de Braga by ARTOTEL", date: "Sabtu, 11 Juli 2026" }
-            ].map((sc, i) => (
+            {classData.jadwal && classData.jadwal.map((sc, i) => (
               <div key={i} className="p-4 border border-slate-100 rounded-2xl bg-white space-y-2">
                 <MapPin className="w-5 h-5 text-blue-500" />
                 <h4 className="font-sans text-sm font-bold text-slate-900">{sc.city}</h4>
@@ -256,17 +417,31 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
       { q: "Apakah CAC berarti saya sudah bisa membuka praktik?", a: "CAC memberikan keterampilan attachment tingkat lanjutan, tetapi belum untuk akses praktik secara komprehensif di ekosistem. Untuk mendapatkannya, peserta dianjurkan untuk melanjutkan hingga Level 3 (CABP)." }
     ];
 
+    const classData = getClassData("cac") || {
+      title: "Certification in Attachment Coaching",
+      desc: "Kelas ini merupakan pelatihan lanjutan bagi peserta yang telah menyelesaikan Certification in Attachment Facilitator (CAF). Program ini dirancang untuk membantu peserta memahami berbagai kebutuhan attachment di setiap rentang usia, bagaimana luka attachment terbentuk, bagaimana ia hidup dalam cerita diri, dan bagaimana pola tidak aman terus berulang dalam hubungan.",
+      investment: "Rp 3.000.000",
+      rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+      duration: "1 Hari Penuh (9 Jam intensif)",
+      jadwal: [
+        { city: "Malang", hotel: "Grand Cakra Hotel", date: "Minggu, 12 Juli 2026" },
+        { city: "Jakarta", hotel: "Santika Premier", date: "Minggu, 12 Juli 2026" },
+        { city: "Yogyakarta", hotel: "Melia Purosani", date: "Minggu, 12 Juli 2026" },
+        { city: "Bandung", hotel: "de Braga by ARTOTEL", date: "Minggu, 12 Juli 2026" }
+      ]
+    };
+
     return (
-      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16">
+      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16 animate-fade-in">
         <button onClick={() => navigateTo("kelas")} className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
           ← Kembali ke Sertifikasi
         </button>
 
         <div className="space-y-6">
           <span className="bg-blue-50 text-blue-600 text-xxs font-mono font-bold px-3 py-1 rounded-full">Level 2 · CAC</span>
-          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Certification in Attachment Coaching</h1>
+          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{classData.title}</h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl">
-            Kelas ini merupakan pelatihan lanjutan bagi peserta yang telah menyelesaikan Certification in Attachment Facilitator (CAF). Program ini dirancang untuk membantu peserta memahami berbagai kebutuhan attachment di setiap rentang usia, bagaimana luka attachment terbentuk, bagaimana ia hidup dalam cerita diri, dan bagaimana pola tidak aman terus berulang dalam hubungan.
+            {classData.desc}
           </p>
           <p className="text-slate-500 text-xs sm:text-sm">
             Kamu akan belajar membaca luka sebagai jejak pengalaman relasional yang menunggu untuk dipahami, diproses, dan ditata ulang dengan lebih aman.
@@ -309,14 +484,13 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
           <div className="border border-slate-100 rounded-3xl p-8 space-y-6 bg-white flex flex-col justify-between">
             <div className="space-y-4">
               <span className="text-xxs font-mono font-bold text-slate-400 uppercase tracking-widest block">INVESTASI PELATIHAN</span>
-              <h3 className="font-sans text-3xl font-bold text-slate-900 font-mono">Rp 3.000.000</h3>
+              <h3 className="font-sans text-3xl font-bold text-slate-900 font-mono">{classData.investment}</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Durasi: 1 Hari Penuh (9 Jam intensif). Format modular dan praktis untuk pendampingan lanjutan.
+                Durasi: {classData.duration}. Format modular dan praktis untuk pendampingan lanjutan.
               </p>
               <div className="bg-slate-50 p-4 rounded-2xl text-xxs text-slate-600 space-y-1.5 border border-slate-100">
                 <p className="font-semibold text-slate-700">Pembayaran melalui Transfer:</p>
-                <p className="font-mono text-xs font-bold">Bank Mandiri No. Rekening: 1410039881313</p>
-                <p className="font-semibold text-slate-700">An. Yayasan Pusat Psikoanalisis Indonesia</p>
+                <p className="text-slate-900 font-medium font-mono whitespace-pre-line">{classData.rekeningBank}</p>
               </div>
             </div>
           </div>
@@ -347,15 +521,11 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
         <div className="space-y-6">
           <h2 className="font-sans text-sm font-semibold uppercase tracking-wider text-blue-600">Jadwal Terdekat</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { city: "Malang", hotel: "Grand Cakra Hotel", date: "Minggu, 12 Juli 2026" },
-              { city: "Jakarta", hotel: "Santika Premier", date: "Minggu, 12 Juli 2026" },
-              { city: "Yogyakarta", hotel: "Melia Purosani", date: "Minggu, 12 Juli 2026" },
-              { city: "Bandung", hotel: "de Braga by ARTOTEL", date: "Minggu, 12 Juli 2026" }
-            ].map((sc, i) => (
+            {classData.jadwal && classData.jadwal.map((sc, i) => (
               <div key={i} className="p-4 border border-slate-100 rounded-2xl bg-white space-y-2">
                 <MapPin className="w-5 h-5 text-blue-500" />
                 <h4 className="font-sans text-sm font-bold text-slate-900">{sc.city}</h4>
+                {sc.hotel && <p className="text-xxs text-slate-500 leading-tight">{sc.hotel}</p>}
                 <p className="text-[10px] font-mono font-bold text-blue-600 pt-1">{sc.date}</p>
               </div>
             ))}
@@ -391,25 +561,35 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
 
   // SUBPAGE: LEVEL 3 - CABP (Attachment-Based Practitioner)
   if (currentHash === "kelas/attachmentpractitioner") {
-    const modules = [
-      "Modul 1 – Writing for Publication", "Modul 2 – Attachment and Mental Health",
-      "Modul 3 – Attachment and Education", "Modul 4 – Attachment and Workplace",
-      "Modul 5 – Attachment and Parenting", "Modul 6 – Attachment and Romantic Relationship",
-      "Modul 7 – Attachment and Spirituality", "Modul 8 – Attachment and Money",
-      "Modul 9 – Attachment and Social Justice", "Modul 10 – Start Your Practice!"
-    ];
+    const classData = getClassData("cabp") || {
+      title: "Certification in Attachment-Based Practitioner",
+      desc: "Kelas ini adalah level tertinggi dalam jalur sertifikasi Jiwamu. Program ini dirancang bagi peserta yang telah memiliki pemahaman mengenai Attachment Facilitating dan Attachment Coaching, serta ingin mengembangkan kompetensi praktik berbasis attachment dalam berbagai bidang kehidupan.",
+      investment: "Rp 13.000.000",
+      rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+      duration: "3 Bulan (100 Jam Pembelajaran)",
+      jadwal: [
+        { city: "Yogyakarta", hotel: "Melia Purosani", date: "Sabtu, 22 Agustus 2026" }
+      ],
+      materi: [
+        "Modul 1 – Writing for Publication", "Modul 2 – Attachment and Mental Health",
+        "Modul 3 – Attachment and Education", "Modul 4 – Attachment and Workplace",
+        "Modul 5 – Attachment and Parenting", "Modul 6 – Attachment and Romantic Relationship",
+        "Modul 7 – Attachment and Spirituality", "Modul 8 – Attachment and Money",
+        "Modul 9 – Attachment and Social Justice", "Modul 10 – Start Your Practice!"
+      ]
+    };
 
     return (
-      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16">
+      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16 animate-fade-in">
         <button onClick={() => navigateTo("kelas")} className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
           ← Kembali ke Sertifikasi
         </button>
 
         <div className="space-y-6">
           <span className="bg-blue-50 text-blue-600 text-xxs font-mono font-bold px-3 py-1 rounded-full">Level 3 · CABP</span>
-          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Certification in Attachment-Based Practitioner</h1>
+          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{classData.title}</h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl">
-            Kelas ini adalah level tertinggi dalam jalur sertifikasi Jiwamu. Program ini dirancang bagi peserta yang telah memiliki pemahaman mengenai Attachment Facilitating dan Attachment Coaching, serta ingin mengembangkan kompetensi praktik berbasis attachment dalam berbagai bidang kehidupan.
+            {classData.desc}
           </p>
           <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-3xl">
             Lulusan CABP berkesempatan untuk mengembangkan layanan berbasis attachment melalui ekosistem Jiwamu, termasuk membuka profil layanan di jiwamu.com sesuai ketentuan dan standardisasi yang berlaku, serta dukungan penuh untuk publikasi dan pengembangan kompetensi.
@@ -423,9 +603,9 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
 
         {/* Modules */}
         <div className="space-y-6">
-          <h2 className="font-sans text-sm font-semibold uppercase tracking-wider text-blue-600">10 Modul Utama Pelatihan</h2>
+          <h2 className="font-sans text-sm font-semibold uppercase tracking-wider text-blue-600">Materi Pelajaran</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {modules.map((m, idx) => (
+            {classData.materi && classData.materi.map((m: string, idx: number) => (
               <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-xs sm:text-sm font-mono text-slate-800 font-semibold flex items-center gap-3">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                 <span>{m}</span>
@@ -440,12 +620,13 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
             <span className="text-xxs font-mono font-bold text-slate-400 uppercase tracking-widest block">DURASI & INVESTASI</span>
             <div className="space-y-2">
               <p className="text-xs text-slate-500">Durasi:</p>
-              <h4 className="font-sans text-lg font-bold text-slate-800">3 Bulan (100 Jam Pembelajaran)</h4>
-              <p className="text-xs text-slate-500">Penyampaian: Modular dengan Blended Learning (Offline & Online)</p>
+              <h4 className="font-sans text-lg font-bold text-slate-800">{classData.duration}</h4>
+              <p className="text-xs text-slate-500">Format padat, modular, blended learning.</p>
             </div>
             <div className="space-y-2 border-t border-slate-100 pt-4">
               <p className="text-xs text-slate-500">Investasi:</p>
-              <h3 className="font-sans text-2xl font-bold text-slate-900 font-mono">Rp 13.000.000</h3>
+              <h3 className="font-sans text-2xl font-bold text-slate-900 font-mono">{classData.investment}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 whitespace-pre-line">{classData.rekeningBank}</p>
             </div>
           </div>
 
@@ -476,9 +657,16 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
         {/* Schedule */}
         <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 space-y-4 max-w-lg">
           <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-blue-600">Jadwal Terdekat</h3>
-          <div className="space-y-2 text-xs text-slate-700">
-            <p><strong>Start:</strong> Yogyakarta, Melia Purosani — Sabtu, 22 Agustus 2026</p>
-            <p><strong>Graduation:</strong> Yogyakarta, Melia Purosani — Sabtu-Minggu, 31 Oktober – 1 November 2026</p>
+          <div className="space-y-3">
+            {classData.jadwal && classData.jadwal.map((sc: any, i: number) => (
+              <div key={i} className="text-xs text-slate-700 flex gap-2.5 items-start">
+                <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
+                <div>
+                  <p className="font-black text-slate-900">{sc.city}</p>
+                  <p className="text-[10px] text-slate-500">{sc.hotel} — {sc.date}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -487,6 +675,14 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
 
   // SUBPAGE: CABP Professional Bridging Program
   if (currentHash === "kelas/professionalbridging") {
+    const classData = getClassData("professionalbridging") || {
+      title: "CABP Professional Bridging Program",
+      desc: "Kami mengakui pengalaman profesional Anda. Program ini merupakan jalur khusus untuk psikolog (HIMPSI), psikolog klinis (IPK.ID), dokter (IDI), psikoanalis (API), konselor (IKI), perawat (PPNI), bidan (IBI), kesehatan masyarakat (IAKMI), hipnoterapis (PKHI dan PRAHIPTI), dan coach (ICF). Ini adalah wujud komitmen kami untuk bersinergi bersama.",
+      investment: "Rp 15.000.000",
+      rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+      duration: "3 Bulan (100 Jam) + 6 Jam Matrikulasi"
+    };
+
     const modules = [
       "Matrikulasi 1 – Introduction to Attachment Studies",
       "Matrikulasi 2 – Measuring Attachment Style",
@@ -504,16 +700,16 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
     ];
 
     return (
-      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16">
+      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16 animate-fade-in">
         <button onClick={() => navigateTo("kelas")} className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
           ← Kembali ke Sertifikasi
         </button>
 
         <div className="space-y-6">
           <span className="bg-blue-50 text-blue-600 text-xxs font-mono font-bold px-3 py-1 rounded-full">Jalur Khusus Profesional</span>
-          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">CABP Professional Bridging Program</h1>
+          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{classData.title}</h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl">
-            Kami mengakui pengalaman profesional Anda. Program ini merupakan jalur khusus untuk psikolog (HIMPSI), psikolog klinis (IPK.ID), dokter (IDI), psikoanalis (API), konselor (IKI), perawat (PPNI), bidan (IBI), kesehatan masyarakat (IAKMI), hipnoterapis (PKHI dan PRAHIPTI), dan coach (ICF). Ini adalah wujud komitmen kami untuk bersinergi bersama.
+            {classData.desc}
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <a href="https://wa.me/6289653881556?text=Hai%20Kak%20Nuy%2C%20saya%20ingin%20gabung%20kelas%20CABP%20Professional%20Bridging%20Program!" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all cursor-pointer">
@@ -542,12 +738,13 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
           <div className="bg-white border border-slate-100 rounded-3xl p-8 space-y-6">
             <span className="text-xxs font-mono font-bold text-slate-400 uppercase tracking-widest block">DURASI & INVESTASI</span>
             <div className="space-y-2">
-              <h4 className="font-sans text-lg font-bold text-slate-800">3 Bulan (100 Jam) + 6 Jam Matrikulasi</h4>
+              <h4 className="font-sans text-lg font-bold text-slate-800">{classData.duration}</h4>
               <p className="text-xs text-slate-500">Sistem Blended Learning gabungan online dan offline.</p>
             </div>
             <div className="space-y-2 border-t border-slate-100 pt-4">
               <p className="text-xs text-slate-500 font-semibold text-slate-400 uppercase">INVESTASI PROFESSIONAL</p>
-              <h3 className="font-sans text-2xl font-bold text-slate-900 font-mono">Rp 15.000.000</h3>
+              <h3 className="font-sans text-2xl font-bold text-slate-900 font-mono">{classData.investment}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 whitespace-pre-line">{classData.rekeningBank}</p>
             </div>
           </div>
 
@@ -575,6 +772,14 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
 
   // SUBPAGE: Jiwamu Writing Lab
   if (currentHash === "kelas/writinglab") {
+    const classData = getClassData("writinglab") || {
+      title: "Jiwamu Writing Lab",
+      desc: "Ini adalah kelas inkubasi menulis bagi pemengaruh, pemerhati, pendidik, dan profesional kesehatan mental yang ingin mengembangkan gagasan menjadi naskah buku. Peserta akan didampingi mulai dari pengembangan ide, penyusunan konsep, penulisan awal, hingga menuju naskah yang siap diterbitkan.",
+      investment: "Rp 500.000",
+      rekeningBank: "Bank Mandiri No. Rekening: 1410039881313 An. Yayasan Pusat Psikoanalisis Indonesia",
+      duration: "Bootcamp Inkubasi"
+    };
+
     const sessions = [
       { t: "Sesi 1 — Membaca Dunia Buku", d: "Membahas dunia perbukuan di Indonesia, mitos tentang bakat menulis, mengapa menulis penting bagi profesional dan pemengaruh, serta berkenalan dengan anatomi buku." },
       { t: "Sesi 2 — Tahapan Menulis", d: "Membahas proses menulis dari awal hingga siap dikembangkan menemukan ide, pratulis, menulis draf, merevisi, dan swasunting." },
@@ -583,16 +788,16 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
     ];
 
     return (
-      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16">
+      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 space-y-16 animate-fade-in">
         <button onClick={() => navigateTo("kelas")} className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer">
           ← Kembali ke Sertifikasi
         </button>
 
         <div className="space-y-6">
           <span className="bg-blue-50 text-blue-600 text-xxs font-mono font-bold px-3 py-1 rounded-full">Bootcamp</span>
-          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Jiwamu Writing Lab</h1>
+          <h1 className="font-sans text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">{classData.title}</h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl">
-            Ini adalah kelas inkubasi menulis bagi pemengaruh, pemerhati, pendidik, dan profesional kesehatan mental yang ingin mengembangkan gagasan menjadi naskah buku. Peserta akan didampingi mulai dari pengembangan ide, penyusunan konsep, penulisan awal, hingga menuju naskah yang siap diterbitkan.
+            {classData.desc}
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <a href="https://wa.me/6289653881556?text=Hai%20Kak%20Nuy%2C%20saya%20ingin%20gabung%20kelas%20Jiwamu%20Writing%20Lab!" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all cursor-pointer">
@@ -620,12 +825,12 @@ export default function Kelas({ currentHash, setHash }: KelasProps) {
           <div className="bg-white border border-slate-100 rounded-3xl p-8 space-y-4">
             <span className="text-xxs font-mono font-bold text-slate-400 uppercase tracking-widest block">DURASI & REGISTRASI</span>
             <p className="text-xs text-slate-600">
-              <strong>Durasi:</strong> 2 Minggu (4 Pertemuan Daring). Setelah sesi selesai, peserta tetap didampingi dan difasilitasi dalam inkubasi lanjutan hingga naskah siap terbit.
+              <strong>Durasi:</strong> {classData.duration}. Setelah sesi selesai, peserta tetap didampingi dan difasilitasi dalam inkubasi lanjutan hingga naskah siap terbit.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 border-t border-slate-100 mt-4">
               <span className="text-xxs font-semibold text-slate-400 block uppercase mb-1">REGISTRASI</span>
-              <h3 className="font-sans text-2xl font-bold text-slate-900 font-mono">Rp 500.000</h3>
-              <p className="text-[10px] text-slate-400 mt-1">* Biaya di atas belum termasuk ongkos produksi cetak buku fisik.</p>
+              <h3 className="font-sans text-2xl font-bold text-slate-900 font-mono">{classData.investment}</h3>
+              <p className="text-[10px] text-slate-400 mt-1 whitespace-pre-line">{classData.rekeningBank}</p>
             </div>
           </div>
 

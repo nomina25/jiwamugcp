@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, HelpCircle, Send, CheckCircle2, Phone, Youtube, Facebook, Instagram, Radio, ShoppingBag } from "lucide-react";
+import { ArrowRight, HelpCircle, Send, CheckCircle2, Phone, Youtube, Facebook, Instagram, Radio, ShoppingBag, Play } from "lucide-react";
+import { Artikel, VideoItem } from "../types";
 
 interface HomeProps {
   setHash: (hash: string) => void;
+  artikelList?: Artikel[];
+  videoList?: VideoItem[];
 }
 
-export default function Home({ setHash }: HomeProps) {
+export default function Home({ setHash, artikelList = [], videoList = [] }: HomeProps) {
   const [subName, setSubName] = useState("");
   const [subPhone, setSubPhone] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -276,6 +279,119 @@ export default function Home({ setHash }: HomeProps) {
           ))}
         </div>
       </section>
+
+      {/* SOROTAN JIWAMU SECTION */}
+      {((artikelList && artikelList.length > 0) || (videoList && videoList.length > 0)) && (
+        <section className="max-w-7xl mx-auto space-y-12 animate-fade-in">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b-4 border-black pb-4">
+            <div className="space-y-2">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#8B5CF6] block font-black">Sorotan Jiwamu</span>
+              <h2 className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-[#1A1A1A]">
+                Edukasi & Media Terbaru
+              </h2>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setHash("artikel")} 
+                className="bg-white hover:bg-[#D9F99D] text-black text-xs font-extrabold px-4 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all"
+              >
+                Lihat Semua Artikel
+              </button>
+              <button 
+                onClick={() => setHash("video")} 
+                className="bg-white hover:bg-red-200 text-black text-xs font-extrabold px-4 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all"
+              >
+                Tonton Semua Video
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* 2 Latest Articles */}
+            <div className="lg:col-span-2 space-y-6">
+              <h3 className="text-xs font-mono font-black text-[#1A1A1A] uppercase tracking-wider block bg-[#FFD600] w-fit px-3 py-1 rounded brutal-border-thin shadow-sm">
+                Artikel Terkini
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {artikelList.slice(0, 2).map((art) => (
+                  <div key={art.id} className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between brutal-shadow hover:translate-y-[-2px] transition-all">
+                    <div>
+                      {art.imageUrl && (
+                        <div className="aspect-video w-full overflow-hidden bg-slate-100 border-b-2 border-black">
+                          <img src={art.imageUrl} alt={art.judul} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="p-6 space-y-3">
+                        <div className="flex justify-between items-center text-[10px] font-mono font-semibold text-slate-400">
+                          <span className="bg-[#D9F99D] text-black px-2 py-0.5 rounded-full brutal-border-thin text-[9px] font-bold">{art.kategori}</span>
+                          <span>{art.bacaMilik}</span>
+                        </div>
+                        <h4 className="font-sans font-black text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2">{art.judul}</h4>
+                        <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">{art.ringkasan}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="px-6 pb-6 pt-4 border-t-2 border-black flex justify-between items-center bg-slate-50">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-black text-slate-800 block">{art.penulis}</span>
+                        <span className="text-[9px] text-slate-400 block font-mono">{art.tanggal}</span>
+                      </div>
+                      <button 
+                        onClick={() => setHash("artikel")}
+                        className="text-xxs font-black text-blue-600 hover:underline cursor-pointer"
+                      >
+                        Baca Artikel
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Latest Video */}
+            {videoList && videoList.length > 0 && (
+              <div className="space-y-6">
+                <h3 className="text-xs font-mono font-black text-[#1A1A1A] uppercase tracking-wider block bg-red-200 w-fit px-3 py-1 rounded brutal-border-thin shadow-sm">
+                  Video Terpopuler
+                </h3>
+                {(() => {
+                  const latestVideo = videoList[0];
+                  return (
+                    <div className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between brutal-shadow hover:translate-y-[-2px] transition-all">
+                      <div className="cursor-pointer" onClick={() => setHash("video")}>
+                        <div className="aspect-video relative overflow-hidden bg-slate-900 flex items-center justify-center">
+                          <img src={latestVideo.thumbnail} alt={latestVideo.judul} className="w-full h-full object-cover opacity-80" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow">
+                              <Play className="w-4 h-4 fill-current ml-0.5" />
+                            </div>
+                          </div>
+                          <div className="absolute bottom-2 right-2 bg-black/75 px-1.5 py-0.5 text-[9px] font-mono text-white rounded">
+                            {latestVideo.durasi}
+                          </div>
+                        </div>
+                        <div className="p-6 space-y-2">
+                          <h4 className="font-sans font-black text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">{latestVideo.judul}</h4>
+                          <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">{latestVideo.deskripsi}</p>
+                        </div>
+                      </div>
+                      <div className="px-6 pb-6 pt-3 border-t-2 border-black flex justify-between items-center bg-slate-50">
+                        <span className="text-[10px] font-mono text-slate-400">YouTube Talks</span>
+                        <button 
+                          onClick={() => setHash("video")}
+                          className="text-xxs font-black text-blue-600 hover:underline cursor-pointer"
+                        >
+                          Tonton Sekarang
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* BERLANGGANAN SECTION */}
       <section className="max-w-4xl mx-auto">
