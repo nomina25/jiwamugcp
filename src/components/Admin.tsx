@@ -7,6 +7,7 @@ import {
 import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping } from "../types";
 import { db } from "../firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { getUnsplashDirectUrl } from "../utils/image";
 
 interface AdminProps {
   bukuList: Buku[];
@@ -281,7 +282,7 @@ export default function Admin({
         tanggal: artikelForm.tanggal || new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }),
         kategori: artikelForm.kategori || "Umum",
         bacaMilik: artikelForm.bacaMilik || "5 menit",
-        imageUrl: artikelForm.imageUrl || ""
+        imageUrl: getUnsplashDirectUrl(artikelForm.imageUrl || "")
       };
       await setDoc(doc(db, "articles", id), newArt);
       resetForms();
@@ -895,9 +896,21 @@ export default function Admin({
                   onChange={(e) => setArtikelForm({ ...artikelForm, imageUrl: e.target.value })}
                   className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
                 />
+                <p className="text-[10px] text-slate-400 font-bold mt-1">
+                  *Mendukung link foto Unsplash langsung (Contoh: unsplash.com/photos/...) maupun gambar direct.
+                </p>
                 {artikelForm.imageUrl && (
-                  <div className="mt-2 aspect-video w-full rounded-xl overflow-hidden border border-black bg-slate-50">
-                    <img src={artikelForm.imageUrl} alt="Ilustrasi Preview" className="w-full h-full object-cover" />
+                  <div className="mt-2 aspect-video w-full rounded-xl overflow-hidden border-2 border-black bg-slate-50 relative">
+                    <img 
+                      src={getUnsplashDirectUrl(artikelForm.imageUrl)} 
+                      alt="Ilustrasi Preview" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // Safe fallback inside iframe
+                        console.error("Image failed to load in preview");
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -1838,7 +1851,12 @@ export default function Admin({
                 <div key={art.id} className="p-3 border-2 border-black rounded-xl hover:bg-[#FDF4FF] transition-all flex justify-between items-start gap-4 mb-3 brutal-shadow-sm bg-white animate-fade-in">
                   <div className="flex gap-3 items-center">
                     {art.imageUrl ? (
-                      <img src={art.imageUrl} alt={art.judul} className="w-12 h-12 object-cover rounded-lg border border-black bg-slate-50 shrink-0" />
+                      <img 
+                        src={getUnsplashDirectUrl(art.imageUrl)} 
+                        alt={art.judul} 
+                        className="w-12 h-12 object-cover rounded-lg border border-black bg-slate-50 shrink-0" 
+                        referrerPolicy="no-referrer"
+                      />
                     ) : (
                       <div className="w-12 h-12 bg-slate-100 flex items-center justify-center rounded-lg border border-black text-slate-400 font-mono text-[9px] shrink-0">No Img</div>
                     )}

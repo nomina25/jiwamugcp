@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, HelpCircle, Send, CheckCircle2, Phone, Youtube, Facebook, Instagram, Radio, ShoppingBag, Play } from "lucide-react";
 import { Artikel, VideoItem } from "../types";
+import { getUnsplashDirectUrl } from "../utils/image";
 
 interface HomeProps {
   setHash: (hash: string) => void;
@@ -319,7 +320,12 @@ export default function Home({ setHash, artikelList = [], videoList = [], onView
                     <div>
                       {art.imageUrl && (
                         <div className="aspect-video w-full overflow-hidden bg-slate-100 border-b-2 border-black">
-                          <img src={art.imageUrl} alt={art.judul} className="w-full h-full object-cover" />
+                          <img 
+                            src={getUnsplashDirectUrl(art.imageUrl)} 
+                            alt={art.judul} 
+                            className="w-full h-full object-cover" 
+                            referrerPolicy="no-referrer"
+                          />
                         </div>
                       )}
                       <div className="p-6 space-y-3">

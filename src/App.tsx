@@ -20,6 +20,7 @@ import { initialPendampingList } from "./data/layanan";
 import { db } from "./firebase";
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { Play, X } from "lucide-react";
+import { getUnsplashDirectUrl } from "./utils/image";
 
 // Magazines static list
 const initialMajalahList: MajalahEdisi[] = [
@@ -510,7 +511,7 @@ export default function App() {
                     {selectedArt.imageUrl && (
                       <div className="w-full max-h-[480px] overflow-hidden rounded-3xl border-4 border-black brutal-shadow my-6">
                         <img 
-                          src={selectedArt.imageUrl} 
+                          src={getUnsplashDirectUrl(selectedArt.imageUrl)} 
                           alt={selectedArt.judul} 
                           className="w-full h-full object-cover" 
                           referrerPolicy="no-referrer"
@@ -590,7 +591,7 @@ export default function App() {
                       <div>
                         {art.imageUrl && (
                           <div className="aspect-video w-full overflow-hidden bg-slate-100 border-b-2 border-black">
-                            <img src={art.imageUrl} alt={art.judul} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={getUnsplashDirectUrl(art.imageUrl)} alt={art.judul} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           </div>
                         )}
                         <div className="p-6 space-y-3">
