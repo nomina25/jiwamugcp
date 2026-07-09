@@ -7,9 +7,10 @@ interface HomeProps {
   setHash: (hash: string) => void;
   artikelList?: Artikel[];
   videoList?: VideoItem[];
+  onViewArticle?: (id: string) => void;
 }
 
-export default function Home({ setHash, artikelList = [], videoList = [] }: HomeProps) {
+export default function Home({ setHash, artikelList = [], videoList = [], onViewArticle }: HomeProps) {
   const [subName, setSubName] = useState("");
   const [subPhone, setSubPhone] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -337,7 +338,13 @@ export default function Home({ setHash, artikelList = [], videoList = [] }: Home
                         <span className="text-[9px] text-slate-400 block font-mono">{art.tanggal}</span>
                       </div>
                       <button 
-                        onClick={() => setHash("artikel")}
+                        onClick={() => {
+                          if (onViewArticle) {
+                            onViewArticle(art.id);
+                          } else {
+                            setHash("artikel");
+                          }
+                        }}
                         className="text-xxs font-black text-blue-600 hover:underline cursor-pointer"
                       >
                         Baca Artikel

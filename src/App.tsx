@@ -198,6 +198,7 @@ const defaultClasses = [
 
 export default function App() {
   const [currentHash, setCurrentHash] = useState("");
+  const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
 
   // Lifted dynamic states synced to Cloud Firebase Firestore
   const [bukuList, setBukuList] = useState<Buku[]>([]);
@@ -345,6 +346,9 @@ export default function App() {
       // Parse the hash string (remove leading '#')
       const hash = window.location.hash.substring(1);
       setCurrentHash(hash);
+      if (hash !== "artikel") {
+        setActiveArticleId(null);
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -368,7 +372,15 @@ export default function App() {
       {/* DYNAMIC CONTENT ROUTER */}
       <main className="flex-1">
         {currentHash === "" && (
-          <Home setHash={setHash} artikelList={artikelList} videoList={videoList} />
+          <Home 
+            setHash={setHash} 
+            artikelList={artikelList} 
+            videoList={videoList} 
+            onViewArticle={(id) => {
+              setActiveArticleId(id);
+              setHash("artikel");
+            }}
+          />
         )}
 
         {currentHash.startsWith("kelas") && (
@@ -440,46 +452,177 @@ export default function App() {
         {/* ARTICLES LISTING PAGE */}
         {currentHash === "artikel" && (
           <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 space-y-12 animate-fade-in">
-            <div className="space-y-3">
-              <span className="text-xxs font-mono uppercase tracking-widest text-blue-600 font-bold block">Artikel & Edukasi</span>
-              <h1 className="font-sans text-3xl font-bold text-slate-900 tracking-tight">Katalog Artikel Jiwamu</h1>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-xl">Ulasan populer dan teoretis seputar kesehatan mental, gaya attachment, relasi, dan dekolonisasi kejiwaan Indonesia.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {artikelList.map((art) => (
-                <div key={art.id} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    {art.imageUrl && (
-                      <div className="aspect-video w-full overflow-hidden bg-slate-100 border-b border-slate-50">
-                        <img src={art.imageUrl} alt={art.judul} className="w-full h-full object-cover" />
+            {activeArticleId ? (
+              (() => {
+                const selectedArt = artikelList.find(a => a.id === activeArticleId);
+                if (!selectedArt) {
+                  return (
+                    <div className="text-center py-12 bg-white rounded-3xl border-2 border-black brutal-shadow animate-fade-in">
+                      <p className="text-sm font-bold text-slate-800">Artikel tidak ditemukan.</p>
+                      <button 
+                        onClick={() => setActiveArticleId(null)}
+                        className="mt-4 inline-flex items-center gap-2 bg-[#FFD600] text-black text-xs font-black px-4 py-2 rounded-xl border-2 border-black brutal-shadow-sm transition-all"
+                      >
+                        Kembali ke Katalog
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-16">
+                    {/* Back Button */}
+                    <div>
+                      <button 
+                        onClick={() => setActiveArticleId(null)}
+                        className="inline-flex items-center gap-2 bg-white hover:bg-[#FFD600] text-black text-xs font-black px-4 py-2.5 rounded-xl border-2 border-black brutal-shadow-sm transition-all cursor-pointer active:translate-y-0.5 active:shadow-none"
+                      >
+                        ← Kembali ke Katalog Artikel
+                      </button>
+                    </div>
+
+                    {/* Category & Read Time */}
+                    <div className="flex flex-wrap gap-3 items-center text-xs">
+                      <span className="bg-[#FFD600] text-black px-3 py-1 rounded-full border-2 border-black font-black uppercase text-[10px] tracking-wider shadow-sm">
+                        {selectedArt.kategori}
+                      </span>
+                      <span className="text-slate-500 font-bold font-mono">
+                        {selectedArt.bacaMilik}
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h1 className="font-sans text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight pt-2">
+                      {selectedArt.judul}
+                    </h1>
+
+                    {/* Author Profile Card */}
+                    <div className="flex gap-4 items-center bg-white border-2 border-black rounded-2xl p-4 w-fit brutal-shadow-sm">
+                      <div className="w-10 h-10 rounded-xl bg-[#BFDBFE] border border-black flex items-center justify-center font-black text-xs text-black">
+                        {selectedArt.penulis.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-950">Ditulis oleh {selectedArt.penulis}</p>
+                        <p className="text-[10px] font-mono text-slate-500 font-bold">{selectedArt.tanggal}</p>
+                      </div>
+                    </div>
+
+                    {/* Cover Image */}
+                    {selectedArt.imageUrl && (
+                      <div className="w-full max-h-[480px] overflow-hidden rounded-3xl border-4 border-black brutal-shadow my-6">
+                        <img 
+                          src={selectedArt.imageUrl} 
+                          alt={selectedArt.judul} 
+                          className="w-full h-full object-cover" 
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
                     )}
-                    <div className="p-6 space-y-3">
-                      <div className="flex justify-between items-center text-[10px] font-mono font-semibold text-slate-400">
-                        <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{art.kategori}</span>
-                        <span>{art.bacaMilik}</span>
+
+                    {/* Article Body */}
+                    <div className="prose max-w-3xl mx-auto font-sans text-sm sm:text-base text-slate-800 leading-relaxed space-y-6 pt-4">
+                      {selectedArt.konten.split("\n").map((para, i) => {
+                        const trimmed = para.trim();
+                        if (!trimmed) return null;
+                        
+                        // Styled blockquote for quotes or highlights
+                        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                          return (
+                            <blockquote key={i} className="pl-5 border-l-4 border-[#8B5CF6] italic font-serif text-slate-700 text-lg my-6 bg-[#FDF4FF] py-3 pr-4 rounded-r-xl">
+                              {trimmed}
+                            </blockquote>
+                          );
+                        }
+                        
+                        return (
+                          <p key={i} className="font-semibold text-slate-800">
+                            {trimmed}
+                          </p>
+                        );
+                      })}
+                    </div>
+
+                    {/* Engagement / CTA Block */}
+                    <div className="max-w-3xl mx-auto border-t-2 border-black pt-8 mt-12">
+                      <div className="bg-[#D9F99D] border-4 border-black rounded-3xl p-6 sm:p-8 brutal-shadow flex flex-col sm:flex-row justify-between items-center gap-6">
+                        <div className="space-y-2 text-left">
+                          <h3 className="font-sans text-lg font-black text-black">Apakah artikel ini membantumu?</h3>
+                          <p className="text-xs text-slate-800 font-bold max-w-md">Terhubung bersama kami di WhatsApp untuk berdiskusi seputar kesehatan mental, relasi, dan dekolonisasi batin secara mendalam.</p>
+                        </div>
+                        <a 
+                          href={`https://wa.me/6289653881556?text=Hai%20Jiwamu%2C%20saya%20baru%20saja%20membaca%20artikel%20"${encodeURIComponent(selectedArt.judul)}"%20dan%20tertarik%20berdiskusi!`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 bg-[#8B5CF6] text-white border-2 border-black font-black text-xs px-6 py-3 rounded-xl hover:bg-[#FF71CF] hover:text-black transition-all cursor-pointer shadow-sm active:translate-y-0.5 active:shadow-none shrink-0"
+                        >
+                          Diskusi via WhatsApp
+                        </a>
                       </div>
-                      <h3 className="font-sans font-bold text-sm sm:text-base text-slate-900 leading-snug line-clamp-2">{art.judul}</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-3">{art.ringkasan}</p>
+                    </div>
+
+                    {/* Bottom Back Button */}
+                    <div className="flex justify-center pt-8">
+                      <button 
+                        onClick={() => {
+                          setActiveArticleId(null);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className="inline-flex items-center gap-2 bg-[#FFD600] hover:bg-[#8B5CF6] hover:text-white text-black text-xs font-black px-6 py-3 rounded-xl border-2 border-black brutal-shadow transition-all cursor-pointer active:translate-y-0.5"
+                      >
+                        ← Kembali ke Daftar Artikel
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="px-6 pb-6 pt-4 border-t border-slate-50 flex justify-between items-center">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-semibold text-slate-800 block">{art.penulis}</span>
-                      <span className="text-[9px] text-slate-400 block font-mono">{art.tanggal}</span>
-                    </div>
-                    <button 
-                      onClick={() => alert(`Membaca artikel lengkap: "${art.judul}"\n\n${art.konten}`)}
-                      className="text-xxs font-bold text-blue-600 hover:underline cursor-pointer"
-                    >
-                      Baca Lengkap
-                    </button>
-                  </div>
+                );
+              })()
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <span className="text-xxs font-mono uppercase tracking-widest text-[#8B5CF6] font-black bg-[#FFD600] border-2 border-black px-3 py-1 rounded-full w-fit shadow-sm block">
+                    Artikel & Edukasi
+                  </span>
+                  <h1 className="font-sans text-3xl font-black text-slate-900 tracking-tight">Katalog Artikel Jiwamu</h1>
+                  <p className="text-xs sm:text-sm text-slate-700 font-bold max-w-xl">Ulasan populer dan teoretis seputar kesehatan mental, gaya attachment, relasi, dan dekolonisasi kejiwaan Indonesia.</p>
                 </div>
-              ))}
-            </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+                  {artikelList.map((art) => (
+                    <div key={art.id} className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all flex flex-col justify-between brutal-shadow animate-fade-in">
+                      <div>
+                        {art.imageUrl && (
+                          <div className="aspect-video w-full overflow-hidden bg-slate-100 border-b-2 border-black">
+                            <img src={art.imageUrl} alt={art.judul} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          </div>
+                        )}
+                        <div className="p-6 space-y-3">
+                          <div className="flex justify-between items-center text-[10px] font-mono font-black text-slate-400">
+                            <span className="bg-[#D9F99D] text-black border-2 border-black px-2.5 py-1 rounded-md text-[9px] font-black shadow-sm">{art.kategori}</span>
+                            <span>{art.bacaMilik}</span>
+                          </div>
+                          <h3 className="font-sans font-black text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2">{art.judul}</h3>
+                          <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3 font-semibold">{art.ringkasan}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="px-6 pb-6 pt-4 border-t-2 border-black flex justify-between items-center bg-slate-50">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] font-black text-slate-800 block">{art.penulis}</span>
+                          <span className="text-[9px] text-slate-400 block font-mono font-bold">{art.tanggal}</span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setActiveArticleId(art.id);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className="text-xxs font-black text-blue-600 hover:underline cursor-pointer"
+                        >
+                          Baca Lengkap
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
