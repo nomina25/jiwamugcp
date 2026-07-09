@@ -1,0 +1,199 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator account info",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "nama": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "passwordHash", "nama", "role"]
+    },
+    "Subscriber": {
+      "title": "Subscriber",
+      "description": "Newsletter subscriber",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "tanggalBerlangganan": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "TestResult": {
+      "title": "TestResult",
+      "description": "Kelekatan attachment test result",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "gayaKelekatan": { "type": "string" },
+        "anxietyScore": { "type": "number" },
+        "avoidanceScore": { "type": "number" },
+        "tanggalTes": { "type": "string" }
+      },
+      "required": ["nama", "whatsapp", "gayaKelekatan", "anxietyScore", "avoidanceScore", "tanggalTes"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "Educational article",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "ringkasan": { "type": "string" },
+        "konten": { "type": "string" },
+        "penulis": { "type": "string" },
+        "tanggal": { "type": "string" },
+        "kategori": { "type": "string" },
+        "bacaMilik": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["id", "judul", "konten"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Talks and education video",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "durasi": { "type": "string" },
+        "youtubeId": { "type": "string" },
+        "url": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "deskripsi": { "type": "string" }
+      },
+      "required": ["id", "judul", "youtubeId"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Book publication specification",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string" },
+        "judul": { "type": "string" },
+        "pengarang": { "type": "string" },
+        "cover": { "type": "string" },
+        "tahun": { "type": "number" },
+        "halaman": { "type": "number" },
+        "ukuran": { "type": "string" },
+        "berat": { "type": "string" },
+        "penerbit": { "type": "string" },
+        "harga": { "type": "number" },
+        "deskripsi": { "type": "string" },
+        "daftarIsi": { "type": "array" }
+      },
+      "required": ["slug", "judul"]
+    },
+    "Magazine": {
+      "title": "Magazine",
+      "description": "Magazine issue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nomor": { "type": "string" },
+        "bulanTahun": { "type": "string" },
+        "tema": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "cover": { "type": "string" },
+        "pdfUrl": { "type": "string" }
+      },
+      "required": ["id", "tema"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Crowdfunding research project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "danaTerkumpul": { "type": "number" },
+        "target": { "type": "number" },
+        "status": { "type": "string" },
+        "detailText": { "type": "string" }
+      },
+      "required": ["id", "judul"]
+    },
+    "Download": {
+      "title": "Download",
+      "description": "Downloadable file item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "judul": { "type": "string" },
+        "deskripsi": { "type": "string" },
+        "format": { "type": "string" },
+        "ukuran": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["id", "judul"]
+    },
+    "Trainer": {
+      "title": "Trainer",
+      "description": "Instructor trainer profiles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "gelar": { "type": "string" },
+        "pengalaman": { "type": "string" },
+        "foto": { "type": "string" }
+      },
+      "required": ["id", "nama"]
+    },
+    "Pamong": {
+      "title": "Pamong",
+      "description": "Facilitator profiles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "gelar": { "type": "string" },
+        "foto": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "keahlian": { "type": "array" }
+      },
+      "required": ["id", "nama"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "Class educational levels",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "level": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "price": { "type": "string" },
+        "investment": { "type": "string" },
+        "rekeningBank": { "type": "string" },
+        "duration": { "type": "string" },
+        "jadwal": { "type": "array" },
+        "materi": { "type": "array" },
+        "competence": { "type": "array" }
+      },
+      "required": ["id", "code", "title"]
+    }
+  },
+  "firestore": {
+    "/admins/{email}": { "schema": "Admin", "description": "Admin users accounts" },
+    "/subscribers/{subId}": { "schema": "Subscriber", "description": "Newsletter email signups" },
+    "/test_results/{resultId}": { "schema": "TestResult", "description": "Psychological test scores submissions" },
+    "/articles/{articleId}": { "schema": "Article", "description": "Educational articles" },
+    "/videos/{videoId}": { "schema": "Video", "description": "Educational videos catalog" },
+    "/books/{bookSlug}": { "schema": "Book", "description": "Book list" },
+    "/magazines/{magId}": { "schema": "Magazine", "description": "Magazine catalog" },
+    "/projects/{projectId}": { "schema": "Project", "description": "Crowdfunding/research program campaigns" },
+    "/downloads/{downloadId}": { "schema": "Download", "description": "Free downloads index" },
+    "/trainers/{trainerId}": { "schema": "Trainer", "description": "Certification levels lecturers" },
+    "/pamong/{pamongId}": { "schema": "Pamong", "description": "Professional facilitators roster" },
+    "/classes/{classId}": { "schema": "Class", "description": "Available certified course programs" }
+  }
+}
