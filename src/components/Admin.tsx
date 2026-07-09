@@ -287,7 +287,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving article:", err);
-      alert("Gagal mengunggah artikel ke database.");
+      alert("Gagal mengunggah artikel ke database: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -312,7 +312,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving video:", err);
-      alert("Gagal mengunggah informasi video.");
+      alert("Gagal mengunggah informasi video: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -341,7 +341,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving book:", err);
-      alert("Gagal mengunggah spesifikasi buku.");
+      alert("Gagal mengunggah spesifikasi buku: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -364,7 +364,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving magazine:", err);
-      alert("Gagal mengunggah info majalah.");
+      alert("Gagal mengunggah info majalah: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -387,7 +387,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving project:", err);
-      alert("Gagal mengunggah informasi program crowdfunding riset.");
+      alert("Gagal mengunggah informasi program crowdfunding riset: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -430,7 +430,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving class:", err);
-      alert("Gagal menyinkronkan data kelas ke database.");
+      alert("Gagal menyinkronkan data kelas ke database: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -451,7 +451,7 @@ export default function Admin({
         resetForms();
       } catch (err) {
         console.error("Error saving trainer:", err);
-        alert("Gagal menyimpan data Trainer.");
+        alert("Gagal menyimpan data Trainer: " + (err instanceof Error ? err.message : String(err)));
       }
     } else {
       if (!pamongForm.nama) return;
@@ -469,7 +469,7 @@ export default function Admin({
         resetForms();
       } catch (err) {
         console.error("Error saving pamong:", err);
-        alert("Gagal menyimpan data Pamong.");
+        alert("Gagal menyimpan data Pamong: " + (err instanceof Error ? err.message : String(err)));
       }
     }
   };
@@ -508,7 +508,7 @@ export default function Admin({
       resetForms();
     } catch (err) {
       console.error("Error saving admin:", err);
-      alert("Gagal mendaftarkan administrator baru.");
+      alert("Gagal mendaftarkan administrator baru: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -544,7 +544,7 @@ export default function Admin({
       }
     } catch (err) {
       console.error(`Error deleting ${type}:`, err);
-      alert(`Gagal menghapus data ${type} dari cloud.`);
+      alert(`Gagal menghapus data ${type} dari cloud: ` + (err instanceof Error ? err.message : String(err)));
     }
   };
 
