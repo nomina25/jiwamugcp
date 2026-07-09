@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, HelpCircle, Send, CheckCircle2, Phone, Youtube, Facebook, Instagram, Radio, ShoppingBag, Play } from "lucide-react";
 import { Artikel, VideoItem } from "../types";
-import { getUnsplashDirectUrl } from "../utils/image";
+import { getUnsplashDirectUrl, handleImageError } from "../utils/image";
 
 interface HomeProps {
   setHash: (hash: string) => void;
@@ -325,6 +325,7 @@ export default function Home({ setHash, artikelList = [], videoList = [], onView
                             alt={art.judul} 
                             className="w-full h-full object-cover" 
                             referrerPolicy="no-referrer"
+                            onError={(e) => handleImageError(e, art.judul)}
                           />
                         </div>
                       )}

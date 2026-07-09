@@ -7,7 +7,7 @@ import {
 import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping } from "../types";
 import { db } from "../firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { getUnsplashDirectUrl } from "../utils/image";
+import { getUnsplashDirectUrl, handleImageError } from "../utils/image";
 
 interface AdminProps {
   bukuList: Buku[];
@@ -80,6 +80,14 @@ export default function Admin({
   const [loginPassword, setLoginPassword] = useState("");
   const [setupPassword, setSetupPassword] = useState("");
   const [setupConfirmPassword, setSetupConfirmPassword] = useState("");
+
+  // Forgot Password Fields
+  const [showForgotForm, setShowForgotForm] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [securityCode, setSecurityCode] = useState("");
+  const [newSandi, setNewSandi] = useState("");
+  const [newSandiConfirm, setNewSandiConfirm] = useState("");
+  const [resetSuccess, setResetSuccess] = useState("");
 
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<
@@ -214,6 +222,55 @@ export default function Admin({
     } catch (err) {
       console.error(err);
       setErrorMsg("Terjadi kesalahan sistem saat memverifikasi sandi.");
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setResetSuccess("");
+
+    if (!forgotEmail) {
+      setErrorMsg("Email admin wajib diisi.");
+      return;
+    }
+
+    if (securityCode.toUpperCase().trim() !== "BERTUMBUH-BERSAMA") {
+      setErrorMsg("Kode otorisasi internal salah. Silakan periksa kembali.");
+      return;
+    }
+
+    if (newSandi.length < 6) {
+      setErrorMsg("Kata sandi baru minimal 6 karakter demi keamanan.");
+      return;
+    }
+
+    if (newSandi !== newSandiConfirm) {
+      setErrorMsg("Konfirmasi kata sandi tidak cocok.");
+      return;
+    }
+
+    const foundAdmin = adminUsers.find(a => a.email.toLowerCase() === forgotEmail.toLowerCase().trim());
+    if (!foundAdmin) {
+      setErrorMsg(`Email "${forgotEmail}" tidak terdaftar sebagai administrator.`);
+      return;
+    }
+
+    try {
+      const hashed = await hashPassword(newSandi);
+      const updatedAdmin = {
+        ...foundAdmin,
+        passwordHash: hashed
+      };
+      await setDoc(doc(db, "admins", foundAdmin.email.toLowerCase()), updatedAdmin);
+      setResetSuccess("Kata sandi berhasil direset! Silakan masuk kembali.");
+      setForgotEmail("");
+      setSecurityCode("");
+      setNewSandi("");
+      setNewSandiConfirm("");
+    } catch (error) {
+      console.error(error);
+      setErrorMsg("Gagal mereset kata sandi. Silakan coba lagi.");
     }
   };
 
@@ -698,6 +755,95 @@ export default function Admin({
 
   // Auth Gate: Regular Secure Sign-In Screen
   if (!isAuthorized || !loggedInUser) {
+    if (showForgotForm) {
+      return (
+        <div className="max-w-md mx-auto py-20 px-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 border-4 border-black brutal-shadow">
+            <div className="inline-flex p-3 rounded-2xl bg-[#F0ABFC] border-2 border-black text-black mb-4 shadow-sm">
+              <Shield className="w-6 h-6 animate-pulse" />
+            </div>
+            <h2 className="font-sans text-xl font-black text-slate-900 mb-1">Reset Kata Sandi</h2>
+            <p className="text-xs text-slate-600 font-semibold mb-6">
+              Gunakan kode otorisasi internal sistem untuk menyetel ulang kata sandi admin Anda.
+            </p>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1 font-bold">Email Admin</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. pratama.dianf@gmail.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 font-bold">Kode Otorisasi Internal</label>
+                  <span className="text-[9px] font-bold text-slate-400">Kode: <code className="bg-slate-100 px-1 border border-black rounded font-mono text-black">BERTUMBUH-BERSAMA</code></span>
+                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="Masukkan kode otorisasi..."
+                  value={securityCode}
+                  onChange={(e) => setSecurityCode(e.target.value)}
+                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1 font-bold">Kata Sandi Baru</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Minimal 6 karakter"
+                  value={newSandi}
+                  onChange={(e) => setNewSandi(e.target.value)}
+                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1 font-bold">Konfirmasi Kata Sandi Baru</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Masukkan ulang kata sandi baru"
+                  value={newSandiConfirm}
+                  onChange={(e) => setNewSandiConfirm(e.target.value)}
+                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
+                />
+              </div>
+
+              {errorMsg && <p className="text-xs text-red-600 font-black">{errorMsg}</p>}
+              {resetSuccess && <p className="text-xs text-green-600 font-black">{resetSuccess}</p>}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotForm(false);
+                    setErrorMsg("");
+                    setResetSuccess("");
+                  }}
+                  className="w-1/2 py-2.5 bg-white text-black border-2 border-black rounded-xl font-black transition-all text-xs cursor-pointer shadow-sm active:translate-y-0.5 active:shadow-none hover:bg-slate-100"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-2.5 bg-[#8B5CF6] text-white border-2 border-black rounded-xl font-black transition-all text-xs cursor-pointer shadow-sm active:translate-y-0.5 active:shadow-none hover:bg-[#FF71CF] hover:text-black"
+                >
+                  Reset Sandi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto py-20 px-4">
         <div className="bg-white rounded-3xl p-8 border-4 border-black brutal-shadow">
@@ -721,7 +867,20 @@ export default function Admin({
               />
             </div>
             <div>
-              <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Kata Sandi</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700">Kata Sandi</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotForm(true);
+                    setErrorMsg("");
+                    setResetSuccess("");
+                  }}
+                  className="text-xxs font-black text-[#8B5CF6] hover:underline cursor-pointer"
+                >
+                  Lupa Kata Sandi?
+                </button>
+              </div>
               <input
                 type="password"
                 placeholder="Masukkan kata sandi"
@@ -906,10 +1065,7 @@ export default function Admin({
                       alt="Ilustrasi Preview" 
                       className="w-full h-full object-cover" 
                       referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        // Safe fallback inside iframe
-                        console.error("Image failed to load in preview");
-                      }}
+                      onError={(e) => handleImageError(e, artikelForm.judul || "preview")}
                     />
                   </div>
                 )}
@@ -1856,6 +2012,7 @@ export default function Admin({
                         alt={art.judul} 
                         className="w-12 h-12 object-cover rounded-lg border border-black bg-slate-50 shrink-0" 
                         referrerPolicy="no-referrer"
+                        onError={(e) => handleImageError(e, art.judul)}
                       />
                     ) : (
                       <div className="w-12 h-12 bg-slate-100 flex items-center justify-center rounded-lg border border-black text-slate-400 font-mono text-[9px] shrink-0">No Img</div>
