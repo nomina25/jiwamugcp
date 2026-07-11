@@ -308,19 +308,65 @@ export default function Admin({
     }
   };
 
-  // Helper for markdown toolbar support
+  // Helper for markdown toolbar support with selection-awareness
   const appendMarkdown = (field: string, formSetter: any, formVal: any, syntax: string) => {
+    const textarea = document.getElementById("artikel-konten-textarea") as HTMLTextAreaElement | null;
     const text = formVal[field] || "";
-    let wrapped = "";
-    if (syntax === "B") wrapped = `**${text}**`;
-    else if (syntax === "I") wrapped = `*${text}*`;
-    else if (syntax === "H2") wrapped = `\n## ${text}\n`;
-    else if (syntax === "H3") wrapped = `\n### ${text}\n`;
-    else if (syntax === "List") wrapped = `\n- ${text}`;
-    else if (syntax === "Quote") wrapped = `\n> ${text}\n`;
-    else if (syntax === "Link") wrapped = `[${text}](https://jiwamu.com)`;
+    
+    if (!textarea) {
+      // Fallback if textarea not found
+      let wrapped = "";
+      if (syntax === "B") wrapped = `**Teks Tebal**`;
+      else if (syntax === "I") wrapped = `*Teks Miring*`;
+      else if (syntax === "H2") wrapped = `\n## Judul 2\n`;
+      else if (syntax === "H3") wrapped = `\n### Judul 3\n`;
+      else if (syntax === "List") wrapped = `\n- Item daftar\n`;
+      else if (syntax === "Quote") wrapped = `\n> Kutipan\n`;
+      else if (syntax === "Link") wrapped = `[Link](https://jiwamu.com)`;
+      formSetter({ ...formVal, [field]: text + wrapped });
+      return;
+    }
 
-    formSetter({ ...formVal, [field]: text + wrapped });
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = text.substring(start, end);
+    
+    let replacement = "";
+    let cursorOffset = 0; // Offset from end of replacement to place cursor inside tags if no text selected
+    
+    if (syntax === "B") {
+      replacement = `**${selectedText || "Teks Tebal"}**`;
+      cursorOffset = selectedText ? 0 : 2;
+    } else if (syntax === "I") {
+      replacement = `*${selectedText || "Teks Miring"}*`;
+      cursorOffset = selectedText ? 0 : 1;
+    } else if (syntax === "H2") {
+      const prefix = start === 0 || text[start - 1] === "\n" ? "" : "\n";
+      replacement = `${prefix}## ${selectedText || "Judul 2"}\n`;
+    } else if (syntax === "H3") {
+      const prefix = start === 0 || text[start - 1] === "\n" ? "" : "\n";
+      replacement = `${prefix}### ${selectedText || "Judul 3"}\n`;
+    } else if (syntax === "List") {
+      const prefix = start === 0 || text[start - 1] === "\n" ? "" : "\n";
+      replacement = `${prefix}- ${selectedText || "Item daftar"}\n`;
+    } else if (syntax === "Quote") {
+      const prefix = start === 0 || text[start - 1] === "\n" ? "" : "\n";
+      replacement = `${prefix}> ${selectedText || "Kutipan"}\n`;
+    }
+
+    const newText = text.substring(0, start) + replacement + text.substring(end);
+    formSetter({ ...formVal, [field]: newText });
+
+    // Focus back on the textarea and select the text
+    setTimeout(() => {
+      textarea.focus();
+      if (selectedText) {
+        textarea.setSelectionRange(start, start + replacement.length);
+      } else {
+        const newCursorPos = start + replacement.length - cursorOffset;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 10);
   };
 
   // Durable persistent CMS Save Actions writing to Firestore
@@ -1100,6 +1146,7 @@ export default function Admin({
                   </div>
                 </div>
                 <textarea
+                  id="artikel-konten-textarea"
                   required
                   placeholder="Ketik seluruh konten artikel di sini dengan format standar Markdown..."
                   value={artikelForm.konten || ""}

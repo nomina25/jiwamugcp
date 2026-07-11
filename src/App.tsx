@@ -509,7 +509,7 @@ export default function App() {
 
                     {/* Cover Image */}
                     {selectedArt.imageUrl && (
-                      <div className="w-full aspect-video sm:aspect-[16/9] md:aspect-[21/10] overflow-hidden rounded-3xl border-4 border-black brutal-shadow my-6 bg-slate-50">
+                      <div className="w-full aspect-[16/10] sm:aspect-video md:aspect-[16/9] max-h-[480px] overflow-hidden rounded-3xl border-4 border-black brutal-shadow my-6 bg-slate-50">
                         <img 
                           src={getUnsplashDirectUrl(selectedArt.imageUrl)} 
                           alt={selectedArt.judul} 
