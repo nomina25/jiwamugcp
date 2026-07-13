@@ -4,7 +4,7 @@ import {
   Lock, Unlock, Database, Plus, Trash2, Edit2, Check, FileText, Video, 
   BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search 
 } from "lucide-react";
-import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping } from "../types";
+import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping, Alumni, UnduhanItem } from "../types";
 import { db } from "../firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { getUnsplashDirectUrl, handleImageError } from "../utils/image";
@@ -28,6 +28,10 @@ interface AdminProps {
   setPamongList?: React.Dispatch<React.SetStateAction<any[]>>;
   classesList?: any[];
   setClassesList?: React.Dispatch<React.SetStateAction<any[]>>;
+  alumniList?: any[];
+  setAlumniList?: React.Dispatch<React.SetStateAction<any[]>>;
+  layananSettings?: any;
+  tentangKamiSettings?: any;
 }
 
 // Secure browser-native SHA-256 password hashing helper
@@ -65,7 +69,10 @@ export default function Admin({
   unduhanList = [], setUnduhanList,
   trainersList = [], setTrainersList,
   pamongList = [], setPamongList,
-  classesList = [], setClassesList
+  classesList = [], setClassesList,
+  alumniList = [], setAlumniList,
+  layananSettings,
+  tentangKamiSettings
 }: AdminProps) {
   // Authentication & System States
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -91,8 +98,102 @@ export default function Admin({
 
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<
-    "artikel" | "video" | "buku" | "majalah" | "proyek" | "kelas" | "instructor" | "pelanggan" | "hasil_tes" | "admin_mgmt"
+    "artikel" | "video" | "buku" | "majalah" | "proyek" | "kelas" | "instructor" | "pelanggan" | "hasil_tes" | "admin_mgmt" | "unduhan" | "alumni" | "layanan" | "tentangkami"
   >("artikel");
+
+  // Custom non-blocking Delete Confirmation Modal State
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    id: string;
+    type: string;
+    title: string;
+    onConfirm: () => Promise<void>;
+  } | null>(null);
+
+  // New Forms Fields States
+  const [unduhanForm, setUnduhanForm] = useState<Partial<UnduhanItem>>({
+    id: "", judul: "", ukuran: "1.2 MB", format: "PDF", url: "#", deskripsi: "", imageUrl: ""
+  });
+
+  const [alumniForm, setAlumniForm] = useState<Partial<Alumni>>({
+    nia: "", nama: "", domisili: "", pelatihan: []
+  });
+  const [alumniSelectedPelatihan, setAlumniSelectedPelatihan] = useState<string[]>([]);
+
+  // New Settings Forms States
+  const [layananExpectsText, setLayananExpectsText] = useState("");
+  const [layananCoachingFormat, setLayananCoachingFormat] = useState("");
+  const [layananPsikoanalisisFormat, setLayananPsikoanalisisFormat] = useState("");
+  const [layananFaqs, setLayananFaqs] = useState<{ q: string; a: string }[]>([]);
+  const [layananPathways, setLayananPathways] = useState<{ title: string; desc: string }[]>([]);
+
+  const [tentangKamiProfilText, setTentangKamiProfilText] = useState("");
+  const [tentangKamiAlamat, setTentangKamiAlamat] = useState("");
+  const [tentangKamiWhatsapp, setTentangKamiWhatsapp] = useState("");
+  const [tentangKamiEmail, setTentangKamiEmail] = useState("");
+  const [tentangKamiInitiatives, setTentangKamiInitiatives] = useState<{ title: string; desc: string; hash: string }[]>([]);
+
+  // Populating dynamic settings when props change
+  useEffect(() => {
+    if (layananSettings) {
+      setLayananExpectsText(layananSettings.expects?.join("\n") || "");
+      setLayananCoachingFormat(layananSettings.coachingFormat || "4 sesi setiap bulan | durasi 60–120 menit per sesi");
+      setLayananPsikoanalisisFormat(layananSettings.psikoanalisisFormat || "Minimal 12 sesi setiap bulan | durasi 60 menit per sesi");
+      setLayananFaqs(layananSettings.faqs || []);
+      setLayananPathways(layananSettings.pathways || []);
+    } else {
+      setLayananExpectsText([
+        "Ruang untuk didengarkan tanpa penghakiman",
+        "Pendekatan yang menghormati ritme dan kesiapan batin masing-masing",
+        "Pendampingan dengan batas dan kerangka yang jelas",
+        "Privasi dan kerahasiaan yang dijaga dengan sungguh-sungguh",
+        "Proses yang tidak hanya berfokus pada gejala, tetapi juga pola relasi dan pengalaman hidup yang melatarbelakanginya",
+        "Kesempatan untuk memahami diri, emosi, dan hubungan secara lebih utuh."
+      ].join("\n"));
+      setLayananCoachingFormat("4 sesi setiap bulan | durasi 60–120 menit per sesi");
+      setLayananPsikoanalisisFormat("Minimal 12 sesi setiap bulan | durasi 60 menit per sesi");
+      setLayananFaqs([
+        { q: "Apakah layanan di Jiwamu sama dengan terapi?", a: "Layanan di Jiwamu berfokus pada pendampingan refleksi diri dan proses memahami pengalaman emosional secara lebih mendalam. Pendekatan yang digunakan dapat berbeda-beda sesuai kebutuhan, latar belakang, dan kesepakatan proses kerja bersama." },
+        { q: "Apakah saya harus sedang “sakit” untuk mengikuti layanan?", a: "Tidak. Banyak orang datang bukan karena mengalami krisis berat, tetapi karena ingin memahami dirinya, memperbaiki pola relasi, atau memiliki ruang refleksi yang lebih aman dan terarah." },
+        { q: "Mengapa layanan menggunakan sistem bulanan dan bukan per sesi?", a: "Karena kami percaya proses memahami diri membutuhkan kontinuitas. Sistem bulanan membantu proses pendampingan berlangsung lebih stabil, konsisten, dan memiliki arah yang lebih jelas. Lagi pula, jika kita sepakat bahwa kesehatan mental itu penting, bukankah lebih baik membawanya sedekat mungkin dengan kehidupan kita?" },
+        { q: "Apakah saya boleh memilih pendamping?", a: "Ya. Kamu dapat memilih pendamping berdasarkan kenyamanan, kebutuhan, atau bidang perhatian masing-masing." },
+        { q: "Apakah layanan dilakukan secara online?", a: "Ya. Layanan tersedia secara online maupun offline sesuai ketersediaan dan kesepakatan bersama." },
+        { q: "Apakah semua cerita saya akan dirahasiakan?", a: "Ya. Privasi dan kerahasiaan merupakan bagian penting dalam proses pendampingan di Jiwamu." }
+      ]);
+      setLayananPathways([
+        { title: "Pre-Treatment", desc: "Sesi pengenalan awal selama 30 menit tanpa biaya agar kamu dapat mengenal pendampingmu terlebih dahulu dan mempertimbangkan apakah layanan ini sesuai dengan kebutuhanmu." },
+        { title: "Assessment & Case Formulation", desc: "Proses memahami gambaran kebutuhan, kekuatan, kerentanan, pola batin, serta kondisi emosionalmu saat ini." },
+        { title: "Trial Sessions", desc: "Tahap awal untuk membiasakan diri dengan proses pendampingan sekaligus memastikan kecocokan proses kerja bersama." },
+        { title: "Core Sessions", desc: "Tahap pendalaman untuk memahami dan memproses emosi sulit, memperkuat kualitas positif, dan membangun pola relasi yang lebih aman." },
+        { title: "Trial Termination", desc: "Tahap persiapan mencukupkan layanan secara bertahap agar wawasan dan pengalaman yang diperoleh dapat mulai diterapkan dalam kehidupan sehari-hari." },
+        { title: "Final Termination", desc: "Tahap penutupan dan tindak lanjut untuk membantu proses transisi secara lebih sehat dan sadar." }
+      ]);
+    }
+  }, [layananSettings]);
+
+  useEffect(() => {
+    if (tentangKamiSettings) {
+      setTentangKamiProfilText(tentangKamiSettings.profilText || "");
+      setTentangKamiAlamat(tentangKamiSettings.alamat || "Perumahan Wisma Indah No. A49, Kedungwaru, Tulungagung, Jawa Timur");
+      setTentangKamiWhatsapp(tentangKamiSettings.whatsapp || "0896-5388-1556");
+      setTentangKamiEmail(tentangKamiSettings.email || "info@jiwamu.com");
+      setTentangKamiInitiatives(tentangKamiSettings.initiatives || []);
+    } else {
+      setTentangKamiProfilText(`Secara hukum, Jiwamu merupakan merek dagang resmi di bawah naungan PT Jiwa Media Utama. Kami percaya bahwa banyak persoalan hidup manusia modern tidak dapat dilepaskan dari pengalaman relasional: bagaimana kita belajar mencintai, merasa aman, terabaikan, terluka, bertahan, dan bertumbuh bersama orang lain.
+
+Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan Pamong Jiwa Indonesia (PUSAKA PANJI) bersama beberapa lembaga lain, seperti Institut Psikoanalisis Indonesia, Yayasan Pusat Psikoanalisis Indonesia, Penerbit Minerva, Hypnopreneur Indonesia, dan TBM Matahari. Kami berkolaborasi untuk membangun fondasi kesehatan mental yang membumi bagi bangsa Indonesia.`);
+      setTentangKamiAlamat("Perumahan Wisma Indah No. A49, Kedungwaru, Tulungagung, Jawa Timur");
+      setTentangKamiWhatsapp("0896-5388-1556");
+      setTentangKamiEmail("info@jiwamu.com");
+      setTentangKamiInitiatives([
+        { title: "Jiwamu Academy", desc: "Lembaga pelatihan sertifikasi. Melalui program bertingkat seperti Certification in Attachment Coaching (CAC) dan Certification in Attachment-Based Practitioner (CABP), Jiwamu Academy membantu peserta memahami pola relasi, luka kelekatan, dan penerapan attachment dalam kehidupan personal maupun profesional.", hash: "kelas" },
+        { title: "Jiwamu Center", desc: "Pusat layanan pendampingan coaching dan psikoanalisis. Layanan ini menyediakan ruang aman bagi individu yang ingin memahami diri, relasi, pengalaman emosional, dan pola hidup yang berulang secara lebih mendalam. Pendampingan dilakukan dengan batas, kerangka, dan ritme proses yang jelas.", hash: "layanan" },
+        { title: "Penerbit Jiwamu", desc: "Rumah penerbitan bagi buku-buku populer dan sastra psikologis. Kami menerbitkan karya yang berlandaskan sains, pengalaman, dan pengetahuan kejiwaan yang memadai, tetapi tetap disampaikan secara hangat, jernih, dan dekat dengan kehidupan sehari-hari.", hash: "buku" },
+        { title: "Majalah Jiwamu", desc: "Ruang kolaborasi untuk membagikan, mempertemukan, dan menyatukan ide tentang jiwa dan kehidupan manusia. Majalah ini terbit berkala setiap bulan dan menjadi salah satu medium utama Jiwamu untuk membangun literasi kesehatan jiwa yang populer, reflektif, dan bertanggung jawab.", hash: "majalah" },
+        { title: "Jiwamu Project", desc: "Laboratorium riset dekolonisasi kesehatan mental yang didukung oleh semangat kolektif. Melalui Jiwamu Project, kami berupaya membaca ulang kesehatan mental dalam konteks pengalaman hidup, budaya, sejarah, relasi kuasa, pertarungan gender, spiritualitas, dan kehidupan masyarakat Indonesia.", hash: "proyek" }
+      ]);
+    }
+  }, [tentangKamiSettings]);
 
   // CRM Live Subscription States
   const [subscribers, setSubscribers] = useState<any[]>([]);
@@ -369,6 +470,86 @@ export default function Admin({
     }, 10);
   };
 
+  // New Save handlers for Unduhan, Alumni, Layanan, and Tentang Kami settings
+  const handleSaveUnduhan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!unduhanForm.judul) return;
+
+    try {
+      const id = editingId || `dl-${Date.now()}`;
+      const newDl: UnduhanItem = {
+        id,
+        judul: unduhanForm.judul || "",
+        ukuran: unduhanForm.ukuran || "1.0 MB",
+        format: unduhanForm.format || "PDF",
+        url: unduhanForm.url || "#",
+        deskripsi: unduhanForm.deskripsi || "",
+        imageUrl: unduhanForm.imageUrl || ""
+      };
+      await setDoc(doc(db, "downloads", id), newDl);
+      resetForms();
+    } catch (err) {
+      console.error("Error saving download:", err);
+      alert("Gagal mengunggah info unduhan: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleSaveAlumni = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!alumniForm.nia || !alumniForm.nama) return;
+
+    try {
+      const nia = alumniForm.nia;
+      const newAlumni: Alumni = {
+        nia,
+        nama: alumniForm.nama || "",
+        domisili: alumniForm.domisili || "",
+        pelatihan: alumniSelectedPelatihan
+      };
+      await setDoc(doc(db, "alumni", nia), newAlumni);
+      resetForms();
+    } catch (err) {
+      console.error("Error saving alumni:", err);
+      alert("Gagal mengunggah data alumni: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleSaveLayananSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updatedLayanan = {
+        expects: layananExpectsText.split("\n").map(s => s.trim()).filter(Boolean),
+        coachingFormat: layananCoachingFormat,
+        psikoanalisisFormat: layananPsikoanalisisFormat,
+        faqs: layananFaqs,
+        pathways: layananPathways
+      };
+      await setDoc(doc(db, "settings", "layanan"), updatedLayanan);
+      alert("Pengaturan layanan berhasil disimpan!");
+    } catch (err) {
+      console.error("Error saving layanan settings:", err);
+      alert("Gagal menyimpan pengaturan layanan: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleSaveTentangKamiSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updatedTentangKami = {
+        profilText: tentangKamiProfilText,
+        alamat: tentangKamiAlamat,
+        whatsapp: tentangKamiWhatsapp,
+        email: tentangKamiEmail,
+        initiatives: tentangKamiInitiatives
+      };
+      await setDoc(doc(db, "settings", "tentang_kami"), updatedTentangKami);
+      alert("Pengaturan Tentang Kami berhasil disimpan!");
+    } catch (err) {
+      console.error("Error saving tentang kami settings:", err);
+      alert("Gagal menyimpan pengaturan Tentang Kami: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
   // Durable persistent CMS Save Actions writing to Firestore
   const handleSaveArtikel = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -624,32 +805,42 @@ export default function Admin({
       return;
     }
 
-    if (!confirm(`Apakah Anda yakin ingin menghapus item ini secara permanen dari database Firestore?`)) return;
-
-    try {
-      if (type === "artikel") await deleteDoc(doc(db, "articles", id));
-      if (type === "video") await deleteDoc(doc(db, "videos", id));
-      if (type === "buku") await deleteDoc(doc(db, "books", id));
-      if (type === "majalah") await deleteDoc(doc(db, "magazines", id));
-      if (type === "proyek") await deleteDoc(doc(db, "projects", id));
-      if (type === "kelas") await deleteDoc(doc(db, "classes", id));
-      if (type === "trainer") await deleteDoc(doc(db, "trainers", id));
-      if (type === "pamong") await deleteDoc(doc(db, "pamong", id));
-      if (type === "admin") {
-        if (id === "pratama.dianf@gmail.com") {
-          alert("Gagal: Akun Super Admin utama 'pratama.dianf@gmail.com' tidak dapat dihapus demi keamanan.");
-          return;
+    setDeleteConfirm({
+      isOpen: true,
+      id,
+      type,
+      title: `Hapus ${type.toUpperCase()} Permanen`,
+      onConfirm: async () => {
+        try {
+          if (type === "artikel") await deleteDoc(doc(db, "articles", id));
+          if (type === "video") await deleteDoc(doc(db, "videos", id));
+          if (type === "buku") await deleteDoc(doc(db, "books", id));
+          if (type === "majalah") await deleteDoc(doc(db, "magazines", id));
+          if (type === "proyek") await deleteDoc(doc(db, "projects", id));
+          if (type === "kelas") await deleteDoc(doc(db, "classes", id));
+          if (type === "trainer") await deleteDoc(doc(db, "trainers", id));
+          if (type === "pamong") await deleteDoc(doc(db, "pamong", id));
+          if (type === "unduhan") await deleteDoc(doc(db, "downloads", id));
+          if (type === "alumni") await deleteDoc(doc(db, "alumni", id));
+          if (type === "admin") {
+            if (id === "pratama.dianf@gmail.com") {
+              alert("Gagal: Akun Super Admin utama 'pratama.dianf@gmail.com' tidak dapat dihapus demi keamanan.");
+              return;
+            }
+            if (id.toLowerCase() === loggedInUser?.email.toLowerCase()) {
+              alert("Gagal: Anda tidak dapat menghapus akun Anda sendiri.");
+              return;
+            }
+            await deleteDoc(doc(db, "admins", id));
+          }
+        } catch (err) {
+          console.error(`Error deleting ${type}:`, err);
+          alert(`Gagal menghapus data ${type} dari cloud: ` + (err instanceof Error ? err.message : String(err)));
+        } finally {
+          setDeleteConfirm(null);
         }
-        if (id.toLowerCase() === loggedInUser?.email.toLowerCase()) {
-          alert("Gagal: Anda tidak dapat menghapus akun Anda sendiri.");
-          return;
-        }
-        await deleteDoc(doc(db, "admins", id));
       }
-    } catch (err) {
-      console.error(`Error deleting ${type}:`, err);
-      alert(`Gagal menghapus data ${type} dari cloud: ` + (err instanceof Error ? err.message : String(err)));
-    }
+    });
   };
 
   const resetForms = () => {
@@ -691,10 +882,17 @@ export default function Admin({
       email: "", nama: "", role: "editor"
     });
     setAdminPassword("");
+    setUnduhanForm({
+      id: "", judul: "", ukuran: "1.2 MB", format: "PDF", url: "#", deskripsi: "", imageUrl: ""
+    });
+    setAlumniForm({
+      nia: "", nama: "", domisili: "", pelatihan: []
+    });
+    setAlumniSelectedPelatihan([]);
   };
 
   const handleStartEdit = (item: any, type: string) => {
-    setEditingId(type === "buku" ? item.slug : (type === "admin" ? item.email : item.id));
+    setEditingId(type === "buku" ? item.slug : (type === "admin" ? item.email : (type === "alumni" ? item.nia : item.id)));
     if (type === "artikel") setArtikelForm(item);
     if (type === "video") {
       setVideoForm({
@@ -722,6 +920,13 @@ export default function Admin({
       setInstructorType("pamong");
       setPamongForm(item);
       setTempKeahlian((item.keahlian || []).join(", "));
+    }
+    if (type === "unduhan") {
+      setUnduhanForm(item);
+    }
+    if (type === "alumni") {
+      setAlumniForm(item);
+      setAlumniSelectedPelatihan(item.pelatihan || []);
     }
     if (type === "admin") {
       setAdminForm({
@@ -999,6 +1204,10 @@ export default function Admin({
           { key: "proyek", label: "Riset Proyek", icon: TrendingUp },
           { key: "kelas", label: "Kelola Kelas", icon: GraduationCap },
           { key: "instructor", label: "Pamong & Trainer", icon: Award },
+          { key: "unduhan", label: "Kelola Unduhan", icon: Database },
+          { key: "alumni", label: "Alumni", icon: Users },
+          { key: "layanan", label: "Pengaturan Layanan", icon: Heart },
+          { key: "tentangkami", label: "Tentang Kami", icon: UserCheck },
           { key: "pelanggan", label: "Pelanggan", icon: Users },
           { key: "hasil_tes", label: "Hasil Tes Kelekatan", icon: Heart },
           ...(loggedInUser.role === "superadmin" ? [{ key: "admin_mgmt", label: "Kelola Admin", icon: Shield }] : [])
@@ -1905,6 +2114,270 @@ export default function Admin({
             </form>
           )}
 
+          {/* Form: UNDUHAN */}
+          {activeTab === "unduhan" && (
+            <form onSubmit={handleSaveUnduhan} className="space-y-4">
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Judul Unduhan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ebook Panduan Attachment Style"
+                  value={unduhanForm.judul || ""}
+                  onChange={(e) => setUnduhanForm({ ...unduhanForm, judul: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Ukuran File</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 1.5 MB"
+                  value={unduhanForm.ukuran || ""}
+                  onChange={(e) => setUnduhanForm({ ...unduhanForm, ukuran: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Format File</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. PDF"
+                  value={unduhanForm.format || ""}
+                  onChange={(e) => setUnduhanForm({ ...unduhanForm, format: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">URL File Unduhan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. https://example.com/file.pdf"
+                  value={unduhanForm.url || ""}
+                  onChange={(e) => setUnduhanForm({ ...unduhanForm, url: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">URL Gambar Cover / Ilustrasi</label>
+                <input
+                  type="text"
+                  placeholder="e.g. https://images.unsplash.com/..."
+                  value={unduhanForm.imageUrl || ""}
+                  onChange={(e) => setUnduhanForm({ ...unduhanForm, imageUrl: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Deskripsi Singkat</label>
+                <textarea
+                  placeholder="Jelaskan isi file unduhan ini..."
+                  value={unduhanForm.deskripsi || ""}
+                  onChange={(e) => setUnduhanForm({ ...unduhanForm, deskripsi: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none min-h-[80px]"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-purple-600 text-white border-2 border-black rounded-xl font-black text-xs shadow-sm hover:bg-black hover:text-white"
+                >
+                  {editingId ? "Perbarui Unduhan" : "Tambahkan Unduhan"}
+                </button>
+                {editingId && (
+                  <button type="button" onClick={resetForms} className="px-4 py-2 bg-white border-2 border-black text-black rounded-xl text-xs font-black">
+                    Batal
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
+
+          {/* Form: ALUMNI */}
+          {activeTab === "alumni" && (
+            <form onSubmit={handleSaveAlumni} className="space-y-4">
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Nomor Induk Alumni (NIA)</label>
+                <input
+                  type="text"
+                  required
+                  disabled={!!editingId}
+                  placeholder="e.g. NIA2601004"
+                  value={alumniForm.nia || ""}
+                  onChange={(e) => setAlumniForm({ ...alumniForm, nia: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold font-mono outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dian Pratama, S.Psi., CABP"
+                  value={alumniForm.nama || ""}
+                  onChange={(e) => setAlumniForm({ ...alumniForm, nama: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Domisili (Kota/Kabupaten)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Tulungagung, Jawa Timur"
+                  value={alumniForm.domisili || ""}
+                  onChange={(e) => setAlumniForm({ ...alumniForm, domisili: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Sertifikasi & Pelatihan (Pisahkan baris)</label>
+                <textarea
+                  placeholder="e.g. Certification in Attachment Coaching (CAC)&#10;Certification in Attachment-Based Practitioner (CABP)"
+                  value={alumniSelectedPelatihan.join("\n")}
+                  onChange={(e) => setAlumniSelectedPelatihan(e.target.value.split("\n").map(p => p.trim()).filter(Boolean))}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none min-h-[80px]"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-purple-600 text-white border-2 border-black rounded-xl font-black text-xs shadow-sm hover:bg-black hover:text-white"
+                >
+                  {editingId ? "Perbarui Data Alumni" : "Tambahkan Alumni"}
+                </button>
+                {editingId && (
+                  <button type="button" onClick={resetForms} className="px-4 py-2 bg-white border-2 border-black text-black rounded-xl text-xs font-black">
+                    Batal
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
+
+          {/* Form: PENGATURAN LAYANAN */}
+          {activeTab === "layanan" && (
+            <form onSubmit={handleSaveLayananSettings} className="space-y-4">
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Harapan Klien (Satu per baris)</label>
+                <textarea
+                  required
+                  placeholder="Ruang didengar..."
+                  value={layananExpectsText}
+                  onChange={(e) => setLayananExpectsText(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none min-h-[140px]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Format Coaching Mingguan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 4 sesi setiap bulan | 60–120 menit"
+                  value={layananCoachingFormat}
+                  onChange={(e) => setLayananCoachingFormat(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Format Psikoanalisis Intensif</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Minimal 12 sesi setiap bulan | 60 menit"
+                  value={layananPsikoanalisisFormat}
+                  onChange={(e) => setLayananPsikoanalisisFormat(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-[#8B5CF6] text-white border-2 border-black rounded-xl font-black text-xs shadow-sm hover:bg-black hover:text-white"
+                >
+                  Simpan Semua Pengaturan Layanan
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Form: PENGATURAN TENTANG KAMI */}
+          {activeTab === "tentangkami" && (
+            <form onSubmit={handleSaveTentangKamiSettings} className="space-y-4">
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Profil & Legalitas</label>
+                <textarea
+                  required
+                  placeholder="Profil hukum perusahaan..."
+                  value={tentangKamiProfilText}
+                  onChange={(e) => setTentangKamiProfilText(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none min-h-[180px]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Alamat Sekretariat</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Alamat kantor..."
+                  value={tentangKamiAlamat}
+                  onChange={(e) => setTentangKamiAlamat(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Nomor WhatsApp Resmi</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="WhatsApp..."
+                  value={tentangKamiWhatsapp}
+                  onChange={(e) => setTentangKamiWhatsapp(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Email Resmi</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="Email..."
+                  value={tentangKamiEmail}
+                  onChange={(e) => setTentangKamiEmail(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-[#8B5CF6] text-white border-2 border-black rounded-xl font-black text-xs shadow-sm hover:bg-black hover:text-white"
+                >
+                  Simpan Semua Pengaturan Tentang Kami
+                </button>
+              </div>
+            </form>
+          )}
+
           {/* Form Side Dashboard for PELANGGAN / CRM */}
           {activeTab === "pelanggan" && (
             <div className="space-y-6 text-xs sm:text-sm font-bold text-[#1A1A1A]">
@@ -2293,6 +2766,128 @@ export default function Admin({
               </div>
             )}
 
+            {/* List: KELOLA UNDUHAN */}
+            {activeTab === "unduhan" && (
+              <div className="space-y-4">
+                {unduhanList
+                  .filter(u => u.judul.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((dl) => (
+                    <div key={dl.id} className="p-4 border-2 border-black rounded-xl hover:bg-slate-50 transition-all flex justify-between items-center gap-4 bg-white brutal-shadow-sm animate-fade-in">
+                      <div className="flex gap-3 items-center">
+                        {dl.imageUrl && (
+                          <img src={dl.imageUrl} alt={dl.judul} className="w-12 h-16 object-cover border border-black rounded-md shrink-0" onError={handleImageError} />
+                        )}
+                        <div className="space-y-1">
+                          <h3 className="font-sans font-extrabold text-xs sm:text-sm text-slate-900 leading-snug">{dl.judul}</h3>
+                          <div className="flex gap-2 text-[10px] text-slate-500 font-bold">
+                            <span className="bg-slate-100 px-1.5 py-0.5 border border-black rounded uppercase font-mono">{dl.format}</span>
+                            <span className="bg-slate-100 px-1.5 py-0.5 border border-black rounded font-mono">{dl.ukuran}</span>
+                          </div>
+                          {dl.deskripsi && <p className="text-xxs text-slate-600 line-clamp-2">{dl.deskripsi}</p>}
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <button onClick={() => handleStartEdit(dl, "unduhan")} className="p-2 border border-black rounded-lg bg-white hover:bg-black hover:text-white cursor-pointer shadow-sm">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(dl.id, "unduhan")} className="p-2 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* List: ALUMNI */}
+            {activeTab === "alumni" && (
+              <div className="space-y-4">
+                {alumniList
+                  .filter(a => a.nama.toLowerCase().includes(searchQuery.toLowerCase()) || a.nia.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((al) => (
+                    <div key={al.nia} className="p-4 border-2 border-black rounded-xl hover:bg-slate-50 transition-all flex justify-between items-center gap-4 bg-white brutal-shadow-sm animate-fade-in">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-sans font-extrabold text-xs sm:text-sm text-slate-900 leading-snug">{al.nama}</h3>
+                          <span className="text-[9px] font-mono bg-[#D9F99D] text-slate-800 border border-black px-1.5 py-0.5 rounded font-black">{al.nia}</span>
+                        </div>
+                        <p className="text-xxs text-slate-500 font-bold">Domisili: {al.domisili}</p>
+                        {al.pelatihan && al.pelatihan.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {al.pelatihan.map((p: string, idx: number) => (
+                              <span key={idx} className="text-[8px] bg-purple-50 text-[#8B5CF6] border border-[#C084FC] px-1 py-0.5 rounded font-extrabold">{p}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <button onClick={() => handleStartEdit(al, "alumni")} className="p-2 border border-black rounded-lg bg-white hover:bg-black hover:text-white cursor-pointer shadow-sm">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(al.nia, "alumni")} className="p-2 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* List: PENGATURAN LAYANAN INFO */}
+            {activeTab === "layanan" && (
+              <div className="bg-purple-50 border-2 border-black p-5 rounded-2xl space-y-4 brutal-shadow-sm animate-fade-in">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-black text-slate-900">Pengaturan Layanan (Live)</h3>
+                  <p className="text-xxs text-slate-500 font-semibold">Tampilan data live yang dikonfigurasi melalui form kiri.</p>
+                </div>
+
+                <div className="space-y-3 text-xs font-bold text-slate-800">
+                  <div className="bg-white p-3 border border-black rounded-xl">
+                    <h4 className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Format Coaching</h4>
+                    <p className="text-xs text-purple-700 font-black mt-0.5">{layananCoachingFormat}</p>
+                  </div>
+                  <div className="bg-white p-3 border border-black rounded-xl">
+                    <h4 className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Format Psikoanalisis</h4>
+                    <p className="text-xs text-purple-700 font-black mt-0.5">{layananPsikoanalisisFormat}</p>
+                  </div>
+                  <div className="bg-white p-3 border border-black rounded-xl space-y-1">
+                    <h4 className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Harapan Klien</h4>
+                    <ul className="list-disc list-inside space-y-0.5 font-medium text-slate-600 text-xxs">
+                      {layananExpectsText.split("\n").filter(Boolean).map((h, i) => (
+                        <li key={i}>{h}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* List: PENGATURAN TENTANG KAMI INFO */}
+            {activeTab === "tentangkami" && (
+              <div className="bg-purple-50 border-2 border-black p-5 rounded-2xl space-y-4 brutal-shadow-sm animate-fade-in">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-black text-slate-900">Tentang Kami & Legalitas (Live)</h3>
+                  <p className="text-xxs text-slate-500 font-semibold">Profil legal dan kontak sekretariat live yang diisi lewat form kiri.</p>
+                </div>
+
+                <div className="space-y-3 text-xs font-bold text-slate-800">
+                  <div className="bg-white p-3 border border-black rounded-xl">
+                    <h4 className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Alamat Sekretariat</h4>
+                    <p className="text-xs text-purple-700 font-black mt-0.5">{tentangKamiAlamat}</p>
+                  </div>
+                  <div className="bg-white p-3 border border-black rounded-xl">
+                    <h4 className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Kontak Hubungi Kami</h4>
+                    <p className="text-xs font-mono mt-0.5">WhatsApp: {tentangKamiWhatsapp}</p>
+                    <p className="text-xs font-mono">Email: {tentangKamiEmail}</p>
+                  </div>
+                  <div className="bg-white p-3 border border-black rounded-xl">
+                    <h4 className="text-xxs uppercase tracking-wider text-slate-400 font-bold">Teks Legal & Profil Utama</h4>
+                    <p className="text-xxs text-slate-600 font-medium whitespace-pre-line leading-relaxed mt-1">{tentangKamiProfilText}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* List: KELOLA ADMIN ACCOUNTS */}
             {activeTab === "admin_mgmt" && loggedInUser.role === "superadmin" && (
               <div className="space-y-3">
@@ -2414,6 +3009,37 @@ export default function Admin({
           </div>
         </div>
       </div>
+
+      {/* Reusable Non-blocking Custom Delete Confirmation Modal */}
+      {deleteConfirm?.isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl border-4 border-black p-6 sm:p-8 max-w-sm w-full brutal-shadow space-y-6">
+            <div className="space-y-2">
+              <h3 className="font-sans text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+                ⚠️ Konfirmasi Penghapusan
+              </h3>
+              <p className="text-xs text-slate-600 font-bold leading-relaxed">
+                Apakah Anda yakin ingin menghapus data <span className="text-[#8B5CF6] font-extrabold font-mono">{deleteConfirm.type}</span> terpilih secara permanen dari database Firestore?
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => deleteConfirm.onConfirm()}
+                className="flex-1 py-2.5 bg-red-500 text-white border-2 border-black rounded-xl font-black text-xs hover:bg-red-600 shadow-sm active:translate-y-0.5"
+              >
+                Ya, Hapus Permanen
+              </button>
+              <button 
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-2.5 bg-white text-black border-2 border-black rounded-xl font-black text-xs hover:bg-slate-100 shadow-sm active:translate-y-0.5"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -2423,13 +3049,22 @@ export default function Admin({
       alert("Akses Terbatas: Hanya Super Admin yang diizinkan menghapus data log.");
       return;
     }
-    if (!confirm("Apakah Anda yakin ingin menghapus pelanggan ini dari database Firestore?")) return;
-    try {
-      await deleteDoc(doc(db, "subscribers", id));
-    } catch (err) {
-      console.error(err);
-      alert("Gagal menghapus.");
-    }
+    setDeleteConfirm({
+      isOpen: true,
+      id,
+      type: "subscribers",
+      title: "Hapus Pelanggan Permanen",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "subscribers", id));
+        } catch (err) {
+          console.error(err);
+          alert("Gagal menghapus.");
+        } finally {
+          setDeleteConfirm(null);
+        }
+      }
+    });
   }
 
   async function handleDeleteTestResult(id: string) {
@@ -2437,12 +3072,21 @@ export default function Admin({
       alert("Akses Terbatas: Hanya Super Admin yang diizinkan menghapus data log.");
       return;
     }
-    if (!confirm("Apakah Anda yakin ingin menghapus hasil tes ini dari database Firestore?")) return;
-    try {
-      await deleteDoc(doc(db, "test_results", id));
-    } catch (err) {
-      console.error(err);
-      alert("Gagal menghapus.");
-    }
+    setDeleteConfirm({
+      isOpen: true,
+      id,
+      type: "test_results",
+      title: "Hapus Hasil Tes Permanen",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "test_results", id));
+        } catch (err) {
+          console.error(err);
+          alert("Gagal menghapus.");
+        } finally {
+          setDeleteConfirm(null);
+        }
+      }
+    });
   }
 }

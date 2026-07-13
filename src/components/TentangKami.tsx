@@ -3,9 +3,10 @@ import { Shield, MapPin, Phone, Mail, Globe, Users, BookOpen, Layers, Award, Tre
 
 interface TentangKamiProps {
   setHash: (hash: string) => void;
+  settings?: any;
 }
 
-export default function TentangKami({ setHash }: TentangKamiProps) {
+export default function TentangKami({ setHash, settings }: TentangKamiProps) {
   const navigateTo = (target: string) => {
     setHash(target);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -44,6 +45,14 @@ export default function TentangKami({ setHash }: TentangKamiProps) {
     }
   ];
 
+  const profilText = settings?.profilText || `Secara hukum, Jiwamu merupakan merek dagang resmi di bawah naungan PT Jiwa Media Utama. Kami percaya bahwa banyak persoalan hidup manusia modern tidak dapat dilepaskan dari pengalaman relasional: bagaimana kita belajar mencintai, merasa aman, terabaikan, terluka, bertahan, dan bertumbuh bersama orang lain.
+
+Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan Pamong Jiwa Indonesia (PUSAKA PANJI) bersama beberapa lembaga lain, seperti Institut Psikoanalisis Indonesia, Yayasan Pusat Psikoanalisis Indonesia, Penerbit Minerva, Hypnopreneur Indonesia, dan TBM Matahari. Kami berkolaborasi untuk membangun fondasi kesehatan mental yang membumi bagi bangsa Indonesia.`;
+
+  const alamatText = settings?.alamat || "Perumahan Wisma Indah No. A49, Kedungwaru, Tulungagung, Jawa Timur";
+  const whatsappText = settings?.whatsapp || "0896-5388-1556";
+  const emailText = settings?.email || "info@jiwamu.com";
+
   return (
     <div className="space-y-24 pb-16">
       
@@ -72,12 +81,9 @@ export default function TentangKami({ setHash }: TentangKamiProps) {
               Profil & Legalitas
             </span>
             <h2 className="font-sans text-xl sm:text-2xl font-extrabold text-slate-900">Merawat Pemahaman Manusia Secara Kolektif</h2>
-            <p>
-              Secara hukum, Jiwamu merupakan merek dagang resmi di bawah naungan <strong>PT Jiwa Media Utama</strong>. Kami percaya bahwa banyak persoalan hidup manusia modern tidak dapat dilepaskan dari pengalaman relasional: bagaimana kita belajar mencintai, merasa aman, terabaikan, terluka, bertahan, dan bertumbuh bersama orang lain.
-            </p>
-            <p>
-              Jiwamu juga menjadi bagian integral dari <strong>Pusat Usaha dan Kaderisasi Perkumpulan Pamong Jiwa Indonesia (PUSAKA PANJI)</strong> bersama beberapa lembaga lain, seperti Institut Psikoanalisis Indonesia, Yayasan Pusat Psikoanalisis Indonesia, Penerbit Minerva, Hypnopreneur Indonesia, dan TBM Matahari. Kami berkolaborasi untuk membangun fondasi kesehatan mental yang membumi bagi bangsa Indonesia.
-            </p>
+            <div className="whitespace-pre-line space-y-4">
+              {profilText}
+            </div>
           </div>
 
           <div className="md:col-span-5 bg-white border-2 border-black rounded-3xl p-6 sm:p-8 space-y-4 brutal-shadow">
@@ -155,9 +161,9 @@ export default function TentangKami({ setHash }: TentangKamiProps) {
               </p>
               
               <div className="space-y-3 text-xs text-white font-bold">
-                <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#FFD600] shrink-0" /> Perumahan Wisma Indah No. A49, Kedungwaru, Tulungagung, Jawa Timur</p>
-                <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-[#FFD600] shrink-0" /> WhatsApp: 0896-5388-1556</p>
-                <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-[#FFD600] shrink-0" /> Email: info@jiwamu.com</p>
+                <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#FFD600] shrink-0" /> {alamatText}</p>
+                <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-[#FFD600] shrink-0" /> WhatsApp: {whatsappText}</p>
+                <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-[#FFD600] shrink-0" /> Email: {emailText}</p>
               </div>
             </div>
 

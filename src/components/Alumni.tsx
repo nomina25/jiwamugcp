@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import { Alumni as AlumniType } from "../types";
 import { initialAlumniList } from "../data/alumni";
 import { Search, UserCheck, Shield, MapPin, Award } from "lucide-react";
 
-export default function Alumni() {
+export default function Alumni({ alumniList = [] }: { alumniList?: AlumniType[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("Semua");
 
@@ -15,11 +16,13 @@ export default function Alumni() {
     "Jiwamu Writing Lab"
   ];
 
-  const filteredAlumni = initialAlumniList.filter((a) => {
+  const displayList = alumniList && alumniList.length > 0 ? alumniList : initialAlumniList;
+
+  const filteredAlumni = displayList.filter((a) => {
     const matchesSearch = a.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           a.domisili.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           a.nia.includes(searchTerm);
-    const matchesFilter = selectedFilter === "Semua" || a.pelatihan.includes(selectedFilter);
+    const matchesFilter = selectedFilter === "Semua" || (a.pelatihan && a.pelatihan.includes(selectedFilter));
     return matchesSearch && matchesFilter;
   });
 

@@ -12,7 +12,8 @@ import Alumni from "./components/Alumni";
 import TesKelekatan from "./components/TesKelekatan";
 import Admin from "./components/Admin";
 
-import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, UnduhanItem, Trainer, Pendamping } from "./types";
+import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, UnduhanItem, Trainer, Pendamping, Alumni as AlumniType } from "./types";
+import { initialAlumniList } from "./data/alumni";
 import { initialBukuList } from "./data/buku";
 import { initialProyekList } from "./data/proyek";
 import { initialArtikelList, initialVideoList, initialUnduhanList } from "./data/sumberDaya";
@@ -211,6 +212,9 @@ export default function App() {
   const [trainersList, setTrainersList] = useState<Trainer[]>([]);
   const [pamongList, setPamongList] = useState<Pendamping[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
+  const [alumniList, setAlumniList] = useState<AlumniType[]>([]);
+  const [layananSettings, setLayananSettings] = useState<any>(null);
+  const [tentangKamiSettings, setTentangKamiSettings] = useState<any>(null);
 
   // Synchronize Firestore Database with real-time listeners and self-healing seeds
   useEffect(() => {
@@ -329,6 +333,36 @@ export default function App() {
       }
     });
 
+    // 10. Alumni Sync
+    const unsubAlumni = onSnapshot(collection(db, "alumni"), (snap) => {
+      if (snap.empty) {
+        initialAlumniList.forEach(item => {
+          setDoc(doc(db, "alumni", item.nia), item);
+        });
+      } else {
+        const list = snap.docs.map(d => d.data() as AlumniType);
+        setAlumniList(list);
+      }
+    });
+
+    // 11. Layanan Settings Sync
+    const unsubLayananSettings = onSnapshot(doc(db, "settings", "layanan"), (snapshot) => {
+      if (snapshot.exists()) {
+        setLayananSettings(snapshot.data());
+      } else {
+        setLayananSettings(null);
+      }
+    });
+
+    // 12. Tentang Kami Settings Sync
+    const unsubTentangKamiSettings = onSnapshot(doc(db, "settings", "tentang_kami"), (snapshot) => {
+      if (snapshot.exists()) {
+        setTentangKamiSettings(snapshot.data());
+      } else {
+        setTentangKamiSettings(null);
+      }
+    });
+
     return () => {
       unsubArticles();
       unsubVideos();
@@ -339,6 +373,9 @@ export default function App() {
       unsubTrainers();
       unsubPamong();
       unsubClasses();
+      unsubAlumni();
+      unsubLayananSettings();
+      unsubTentangKamiSettings();
     };
   }, []);
 
@@ -389,7 +426,7 @@ export default function App() {
         )}
 
         {currentHash === "layanan" && (
-          <Layanan pamongList={pamongList} />
+          <Layanan pamongList={pamongList} settings={layananSettings} />
         )}
 
         {currentHash.startsWith("buku") && (
@@ -409,7 +446,7 @@ export default function App() {
         )}
 
         {currentHash === "tentangkami" && (
-          <TentangKami setHash={setHash} />
+          <TentangKami setHash={setHash} settings={tentangKamiSettings} />
         )}
 
         {currentHash === "proyek" && (
@@ -420,7 +457,7 @@ export default function App() {
         )}
 
         {currentHash === "alumni" && (
-          <Alumni />
+          <Alumni alumniList={alumniList} />
         )}
 
         {currentHash === "tes-kelekatan" && (
@@ -447,6 +484,10 @@ export default function App() {
             setPamongList={setPamongList}
             classesList={classesList}
             setClassesList={setClassesList}
+            alumniList={alumniList}
+            setAlumniList={setAlumniList}
+            layananSettings={layananSettings}
+            tentangKamiSettings={tentangKamiSettings}
           />
         )}
 

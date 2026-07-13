@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Search, Heart, Shield, Check, Send, ChevronDown, ChevronUp, Star, Filter } from "lucide-react";
 import { Pendamping } from "../types";
 
-export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[] }) {
+export default function Layanan({ pamongList = [], settings }: { pamongList?: Pendamping[]; settings?: any }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKeahlian, setSelectedKeahlian] = useState("Semua");
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
@@ -29,7 +29,7 @@ export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[]
     return matchesSearch && matchesKeahlian;
   });
 
-  const expects = [
+  const expects = settings?.expects || [
     "Ruang untuk didengarkan tanpa penghakiman",
     "Pendekatan yang menghormati ritme dan kesiapan batin masing-masing",
     "Pendampingan dengan batas dan kerangka yang jelas",
@@ -38,7 +38,7 @@ export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[]
     "Kesempatan untuk memahami diri, emosi, dan hubungan secara lebih utuh."
   ];
 
-  const pathways = [
+  const pathways = settings?.pathways || [
     { title: "Pre-Treatment", desc: "Sesi pengenalan awal selama 30 menit tanpa biaya agar kamu dapat mengenal pendampingmu terlebih dahulu dan mempertimbangkan apakah layanan ini sesuai dengan kebutuhanmu." },
     { title: "Assessment & Case Formulation", desc: "Proses memahami gambaran kebutuhan, kekuatan, kerentanan, pola batin, serta kondisi emosionalmu saat ini." },
     { title: "Trial Sessions", desc: "Tahap awal untuk membiasakan diri dengan proses pendampingan sekaligus memastikan kecocokan proses kerja bersama." },
@@ -47,7 +47,7 @@ export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[]
     { title: "Final Termination", desc: "Tahap penutupan dan tindak lanjut untuk membantu proses transisi secara lebih sehat dan sadar." }
   ];
 
-  const faqs = [
+  const faqs = settings?.faqs || [
     { q: "Apakah layanan di Jiwamu sama dengan terapi?", a: "Layanan di Jiwamu berfokus pada pendampingan refleksi diri dan proses memahami pengalaman emosional secara lebih mendalam. Pendekatan yang digunakan dapat berbeda-beda sesuai kebutuhan, latar belakang, dan kesepakatan proses kerja bersama." },
     { q: "Apakah saya harus sedang “sakit” untuk mengikuti layanan?", a: "Tidak. Banyak orang datang bukan karena mengalami krisis berat, tetapi karena ingin memahami dirinya, memperbaiki pola relasi, atau memiliki ruang refleksi yang lebih aman dan terarah." },
     { q: "Mengapa layanan menggunakan sistem bulanan dan bukan per sesi?", a: "Karena kami percaya proses memahami diri membutuhkan kontinuitas. Sistem bulanan membantu proses pendampingan berlangsung lebih stabil, konsisten, dan memiliki arah yang lebih jelas. Lagi pula, jika kita sepakat bahwa kesehatan mental itu penting, bukankah lebih baik membawanya sedekat mungkin dengan kehidupan kita?" },
@@ -55,6 +55,9 @@ export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[]
     { q: "Apakah layanan dilakukan secara online?", a: "Ya. Layanan tersedia secara online maupun offline sesuai ketersediaan dan kesepakatan bersama." },
     { q: "Apakah semua cerita saya akan dirahasiakan?", a: "Ya. Privasi dan kerahasiaan merupakan bagian penting dalam proses pendampingan di Jiwamu." }
   ];
+
+  const coachingFormat = settings?.coachingFormat || "4 sesi setiap bulan | durasi 60–120 menit per sesi";
+  const psikoanalisisFormat = settings?.psikoanalisisFormat || "Minimal 12 sesi setiap bulan | durasi 60 menit per sesi";
 
   return (
     <div className="space-y-24 pb-16">
@@ -138,7 +141,7 @@ export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[]
             </div>
             <div className="border-t-2 border-black pt-6 mt-8">
               <p className="text-xxs font-mono text-slate-500 uppercase tracking-wider mb-1 font-black">Format Layanan</p>
-              <p className="text-xs font-black text-slate-900">4 sesi setiap bulan | durasi 60–120 menit per sesi</p>
+              <p className="text-xs font-black text-slate-900">{coachingFormat}</p>
             </div>
           </div>
 
@@ -156,7 +159,7 @@ export default function Layanan({ pamongList = [] }: { pamongList?: Pendamping[]
             </div>
             <div className="border-t-2 border-black pt-6 mt-8">
               <p className="text-xxs font-mono text-purple-200 uppercase tracking-wider mb-1 font-black">Format Layanan</p>
-              <p className="text-xs font-black text-[#FFD600]">Minimal 12 sesi setiap bulan | durasi 60 menit per sesi</p>
+              <p className="text-xs font-black text-[#FFD600]">{psikoanalisisFormat}</p>
             </div>
           </div>
         </div>
