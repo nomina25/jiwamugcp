@@ -635,7 +635,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
     if (!majalahForm.tema) return;
 
     try {
-      const id = editingId || `Ed. ${majalahList.length + 1}/${new Date().getFullYear()}`;
+      const id = editingId || `Ed. ${majalahList.length + 1}-${new Date().getFullYear()}`;
       const updatedMajalah: MajalahEdisi = {
         id,
         nomor: majalahForm.nomor || `Edisi ${majalahList.length + 1}`,

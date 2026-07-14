@@ -26,7 +26,7 @@ import { getUnsplashDirectUrl, handleImageError } from "./utils/image";
 // Magazines static list
 const initialMajalahList: MajalahEdisi[] = [
   {
-    id: "Ed. 22/2026",
+    id: "Ed. 22-2026",
     nomor: "Edisi 22",
     bulanTahun: "Juni 2026",
     tema: "Membongkar Topeng 'Si Baik-Baik Saja'",
@@ -35,7 +35,7 @@ const initialMajalahList: MajalahEdisi[] = [
     pdfUrl: "#"
   },
   {
-    id: "Ed. 21/2026",
+    id: "Ed. 21-2026",
     nomor: "Edisi 21",
     bulanTahun: "Mei 2026",
     tema: "Rupture-Repair dalam Pertemanan",
@@ -44,7 +44,7 @@ const initialMajalahList: MajalahEdisi[] = [
     pdfUrl: "#"
   },
   {
-    id: "Ed. 20/2026",
+    id: "Ed. 20-2026",
     nomor: "Edisi 20",
     bulanTahun: "April 2026",
     tema: "Dekolonisasi Batin Nusantara",

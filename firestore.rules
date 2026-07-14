@@ -60,5 +60,15 @@ service cloud.firestore {
     match /classes/{classId} {
       allow read, write: if true;
     }
+
+    // Alumni Collection
+    match /alumni/{alumniId} {
+      allow read, write: if true;
+    }
+
+    // Settings Collection
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
   }
 }
