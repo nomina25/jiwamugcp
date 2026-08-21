@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 // Firebase configuration from firebase-applet-config.json
 const firebaseConfig = {
@@ -16,3 +17,4 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore with custom database ID
 export const db = getFirestore(app, "ai-studio-jiwamu-6fbb76eb-bfff-4bab-9e57-53dc857e3ca2");
+export const auth = getAuth(app);

@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { 
   Lock, Unlock, Database, Plus, Trash2, Edit2, Check, FileText, Video, 
-  BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search 
+  BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search, Mail 
 } from "lucide-react";
 import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping, Alumni, UnduhanItem } from "../types";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { sendPasswordResetEmail } from "firebase/auth";
 import { getUnsplashDirectUrl, handleImageError } from "../utils/image";
 
 interface AdminProps {
@@ -83,7 +84,7 @@ export default function Admin({
   const [searchQuery, setSearchQuery] = useState("");
 
   // Login & Setup Fields
-  const [loginEmail, setLoginEmail] = useState("pratama.dianf@gmail.com");
+  const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [setupPassword, setSetupPassword] = useState("");
   const [setupConfirmPassword, setSetupConfirmPassword] = useState("");
@@ -91,9 +92,7 @@ export default function Admin({
   // Forgot Password Fields
   const [showForgotForm, setShowForgotForm] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
-  const [securityCode, setSecurityCode] = useState("");
-  const [newSandi, setNewSandi] = useState("");
-  const [newSandiConfirm, setNewSandiConfirm] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetSuccess, setResetSuccess] = useState("");
 
   // Navigation Tab State
@@ -331,47 +330,34 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
     setErrorMsg("");
     setResetSuccess("");
 
-    if (!forgotEmail) {
+    const targetEmail = forgotEmail.trim().toLowerCase();
+    if (!targetEmail) {
       setErrorMsg("Email admin wajib diisi.");
       return;
     }
 
-    if (securityCode.toUpperCase().trim() !== "BERTUMBUH-BERSAMA") {
-      setErrorMsg("Kode otorisasi internal salah. Silakan periksa kembali.");
-      return;
-    }
-
-    if (newSandi.length < 6) {
-      setErrorMsg("Kata sandi baru minimal 6 karakter demi keamanan.");
-      return;
-    }
-
-    if (newSandi !== newSandiConfirm) {
-      setErrorMsg("Konfirmasi kata sandi tidak cocok.");
-      return;
-    }
-
-    const foundAdmin = adminUsers.find(a => a.email.toLowerCase() === forgotEmail.toLowerCase().trim());
+    const foundAdmin = adminUsers.find(a => a.email.toLowerCase() === targetEmail);
     if (!foundAdmin) {
-      setErrorMsg(`Email "${forgotEmail}" tidak terdaftar sebagai administrator.`);
+      setErrorMsg(`Email "${targetEmail}" tidak terdaftar sebagai administrator sistem.`);
       return;
     }
 
+    setIsSendingReset(true);
     try {
-      const hashed = await hashPassword(newSandi);
-      const updatedAdmin = {
-        ...foundAdmin,
-        passwordHash: hashed
-      };
-      await setDoc(doc(db, "admins", foundAdmin.email.toLowerCase()), updatedAdmin);
-      setResetSuccess("Kata sandi berhasil direset! Silakan masuk kembali.");
+      await sendPasswordResetEmail(auth, targetEmail);
+      setResetSuccess(`Tautan pemulihan kata sandi telah dikirim ke "${targetEmail}". Silakan periksa inbox / spam email Anda.`);
       setForgotEmail("");
-      setSecurityCode("");
-      setNewSandi("");
-      setNewSandiConfirm("");
-    } catch (error) {
-      console.error(error);
-      setErrorMsg("Gagal mereset kata sandi. Silakan coba lagi.");
+    } catch (error: any) {
+      console.error("Error sending reset email:", error);
+      if (error?.code === "auth/user-not-found") {
+        setErrorMsg("Email belum terdaftar di layanan autentikasi.");
+      } else if (error?.code === "auth/too-many-requests") {
+        setErrorMsg("Terlalu banyak permintaan reset. Silakan coba beberapa saat lagi.");
+      } else {
+        setResetSuccess(`Permintaan pemulihan untuk "${targetEmail}" telah diproses. Silakan periksa email Anda.`);
+      }
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -1011,64 +997,28 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
         <div className="max-w-md mx-auto py-20 px-4 animate-fade-in">
           <div className="bg-white rounded-3xl p-8 border-4 border-black brutal-shadow">
             <div className="inline-flex p-3 rounded-2xl bg-[#F0ABFC] border-2 border-black text-black mb-4 shadow-sm">
-              <Shield className="w-6 h-6 animate-pulse" />
+              <Mail className="w-6 h-6" />
             </div>
-            <h2 className="font-sans text-xl font-black text-slate-900 mb-1">Reset Kata Sandi</h2>
-            <p className="text-xs text-slate-600 font-semibold mb-6">
-              Gunakan kode otorisasi internal sistem untuk menyetel ulang kata sandi admin Anda.
+            <h2 className="font-sans text-xl font-black text-slate-900 mb-1">Pemulihan Kata Sandi</h2>
+            <p className="text-xs text-slate-600 font-medium mb-6 leading-relaxed">
+              Masukkan email administrator Anda. Tautan pemulihan kata sandi resmi dan aman akan dikirimkan langsung ke inbox email Anda.
             </p>
 
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1 font-bold">Email Admin</label>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Email Administrator</label>
                 <input
                   type="email"
                   required
-                  placeholder="e.g. pratama.dianf@gmail.com"
+                  placeholder="admin@jiwamu.com"
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
                 />
               </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 font-bold">Kode Otorisasi Internal</label>
-                  <span className="text-[9px] font-bold text-slate-400">Kode: <code className="bg-slate-100 px-1 border border-black rounded font-mono text-black">BERTUMBUH-BERSAMA</code></span>
-                </div>
-                <input
-                  type="text"
-                  required
-                  placeholder="Masukkan kode otorisasi..."
-                  value={securityCode}
-                  onChange={(e) => setSecurityCode(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1 font-bold">Kata Sandi Baru</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Minimal 6 karakter"
-                  value={newSandi}
-                  onChange={(e) => setNewSandi(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1 font-bold">Konfirmasi Kata Sandi Baru</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Masukkan ulang kata sandi baru"
-                  value={newSandiConfirm}
-                  onChange={(e) => setNewSandiConfirm(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
-                />
-              </div>
 
-              {errorMsg && <p className="text-xs text-red-600 font-black">{errorMsg}</p>}
-              {resetSuccess && <p className="text-xs text-green-600 font-black">{resetSuccess}</p>}
+              {errorMsg && <p className="text-xs text-red-600 font-bold bg-red-50 p-2.5 rounded-lg border border-red-200">{errorMsg}</p>}
+              {resetSuccess && <p className="text-xs text-emerald-700 font-bold bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">{resetSuccess}</p>}
 
               <div className="flex gap-3 pt-2">
                 <button
@@ -1080,13 +1030,14 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                   }}
                   className="w-1/2 py-2.5 bg-white text-black border-2 border-black rounded-xl font-black transition-all text-xs cursor-pointer shadow-sm active:translate-y-0.5 active:shadow-none hover:bg-slate-100"
                 >
-                  Batal
+                  Kembali
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-2.5 bg-[#8B5CF6] text-white border-2 border-black rounded-xl font-black transition-all text-xs cursor-pointer shadow-sm active:translate-y-0.5 active:shadow-none hover:bg-[#FF71CF] hover:text-black"
+                  disabled={isSendingReset}
+                  className="w-1/2 py-2.5 bg-[#8B5CF6] text-white border-2 border-black rounded-xl font-black transition-all text-xs cursor-pointer shadow-sm active:translate-y-0.5 active:shadow-none hover:bg-[#FF71CF] hover:text-black disabled:opacity-50"
                 >
-                  Reset Sandi
+                  {isSendingReset ? "Mengirim..." : "Kirim Tautan"}
                 </button>
               </div>
             </form>
@@ -1111,7 +1062,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
               <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Email Admin</label>
               <input
                 type="email"
-                placeholder="email@jiwamu.com"
+                placeholder="admin@jiwamu.com"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 className="w-full px-4 py-2.5 border-2 border-black rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] font-mono font-bold shadow-sm"
@@ -2479,8 +2430,8 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                   <button
                     onClick={() => {
                       const csvContent = "data:text/csv;charset=utf-8," 
-                        + ["Nama,WhatsApp,Style,Cemas,Menghindar,Tanggal"].join(",") + "\n"
-                        + testResults.map(r => `"${r.nama}","${r.whatsapp}","${r.gayaKelekatan}","${r.anxietyScore}","${r.avoidanceScore}","${r.tanggalTes}"`).join("\n");
+                        + ["Nama_Inisial,WhatsApp,Usia,Jenis_Kelamin,Kota_Kabupaten,Style,Cemas,Menghindar,Tanggal"].join(",") + "\n"
+                        + testResults.map(r => `"${r.nama || ""}","${r.whatsapp || ""}","${r.usia || "-"}","${r.gender || "-"}","${r.kota || "-"}","${r.gayaKelekatan || ""}","${r.anxietyScore || 0}","${r.avoidanceScore || 0}","${r.tanggalTes || ""}"`).join("\n");
                       const encodedUri = encodeURI(csvContent);
                       const link = document.createElement("a");
                       link.setAttribute("href", encodedUri);
@@ -2968,7 +2919,12 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                   <p className="text-xs text-slate-400 font-bold py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">Belum ada hasil tes masuk.</p>
                 )}
                 {testResults
-                  .filter(r => r.nama.toLowerCase().includes(searchQuery.toLowerCase()) || r.gayaKelekatan?.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .filter(r => 
+                    r.nama?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    r.gayaKelekatan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    r.whatsapp?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    r.kota?.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
                   .map((res) => {
                     const style = res.gayaKelekatan || "";
                     let colorClass = "bg-slate-200 text-slate-800";
@@ -2989,7 +2945,28 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                             </span>
                           </div>
                           <h3 className="font-sans font-extrabold text-xs sm:text-sm text-slate-900 leading-snug">{res.nama}</h3>
-                          <p className="text-xs font-mono text-[#8B5CF6] font-black">{res.whatsapp}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs font-mono text-[#8B5CF6] font-black">{res.whatsapp}</p>
+                            {(res.usia || res.gender || res.kota) && (
+                              <div className="flex gap-1 items-center flex-wrap">
+                                {res.usia && res.usia !== "-" && (
+                                  <span className="text-[9px] font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-black text-slate-800">
+                                    {res.usia} thn
+                                  </span>
+                                )}
+                                {res.gender && res.gender !== "-" && (
+                                  <span className="text-[9px] font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-black text-slate-800">
+                                    {res.gender}
+                                  </span>
+                                )}
+                                {res.kota && res.kota !== "-" && (
+                                  <span className="text-[9px] font-bold bg-[#FEF08A] px-1.5 py-0.5 rounded border border-black text-black">
+                                    📍 {res.kota}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                           <p className="text-[10px] text-slate-500 font-semibold">
                             Waktu Tes: {res.tanggalTes ? new Date(res.tanggalTes).toLocaleString("id-ID") : "-"}
                           </p>

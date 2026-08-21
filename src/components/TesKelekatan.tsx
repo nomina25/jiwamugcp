@@ -43,6 +43,9 @@ export default function TesKelekatan() {
   // Form fields for Firestore CRM submissions
   const [userNama, setUserNama] = useState("");
   const [userWhatsapp, setUserWhatsapp] = useState("");
+  const [userUsia, setUserUsia] = useState("");
+  const [userGender, setUserGender] = useState("");
+  const [userKota, setUserKota] = useState("");
   const [isReportSubmitted, setIsReportSubmitted] = useState(false);
 
   const handleStart = () => {
@@ -50,6 +53,9 @@ export default function TesKelekatan() {
     setCurrentIdx(0);
     setUserNama("");
     setUserWhatsapp("");
+    setUserUsia("");
+    setUserGender("");
+    setUserKota("");
     setIsReportSubmitted(false);
     setStep("quiz");
   };
@@ -80,8 +86,11 @@ export default function TesKelekatan() {
 
     try {
       await addDoc(collection(db, "test_results"), {
-        nama: userNama,
-        whatsapp: userWhatsapp,
+        nama: userNama.trim(),
+        whatsapp: userWhatsapp.trim(),
+        usia: userUsia ? Number(userUsia) || userUsia : "-",
+        gender: userGender || "Tidak ingin menyebutkan",
+        kota: userKota.trim() || "-",
         gayaKelekatan: results.title,
         anxietyScore: results.anxietyScore,
         avoidanceScore: results.avoidanceScore,
@@ -357,7 +366,7 @@ export default function TesKelekatan() {
                   Kirim Hasil Analisis Lengkap & Tips Relasional via WhatsApp
                 </h4>
                 <p className="text-xs text-slate-800 font-bold mb-4">
-                  Masukkan Nama dan No. WhatsApp Anda. Kami akan mengirimkan dokumen analisis mendalam serta panduan langkah demi langkah memulihkan rasa aman batin secara gratis.
+                  Lengkapi data berikut untuk menerima dokumen analisis mendalam serta panduan langkah demi langkah memulihkan rasa aman batin via WhatsApp secara gratis.
                 </p>
 
                 {isReportSubmitted ? (
@@ -369,29 +378,92 @@ export default function TesKelekatan() {
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSendReport} className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      id="report-user-name"
-                      type="text"
-                      placeholder="Nama Lengkap"
-                      value={userNama}
-                      onChange={(e) => setUserNama(e.target.value)}
-                      className="bg-white border-2 border-black rounded-xl px-4 py-3 text-xs flex-1 placeholder:text-slate-400 font-bold"
-                      required
-                    />
-                    <input
-                      id="report-user-phone"
-                      type="tel"
-                      placeholder="No. WhatsApp"
-                      value={userWhatsapp}
-                      onChange={(e) => setUserWhatsapp(e.target.value)}
-                      className="bg-white border-2 border-black rounded-xl px-4 py-3 text-xs flex-1 placeholder:text-slate-400 font-mono font-bold"
-                      required
-                    />
+                  <form onSubmit={handleSendReport} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-slate-800 mb-1">
+                          Nama (atau inisial) <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          id="report-user-name"
+                          type="text"
+                          placeholder="Nama atau inisial Anda"
+                          value={userNama}
+                          onChange={(e) => setUserNama(e.target.value)}
+                          className="w-full bg-white border-2 border-black rounded-xl px-3.5 py-2.5 text-xs placeholder:text-slate-400 font-bold shadow-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-slate-800 mb-1">
+                          No. WhatsApp <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          id="report-user-phone"
+                          type="tel"
+                          placeholder="08123456789"
+                          value={userWhatsapp}
+                          onChange={(e) => setUserWhatsapp(e.target.value)}
+                          className="w-full bg-white border-2 border-black rounded-xl px-3.5 py-2.5 text-xs placeholder:text-slate-400 font-mono font-bold shadow-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-slate-800 mb-1">
+                          Usia <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          id="report-user-age"
+                          type="number"
+                          min="10"
+                          max="100"
+                          placeholder="Contoh: 25"
+                          value={userUsia}
+                          onChange={(e) => setUserUsia(e.target.value)}
+                          className="w-full bg-white border-2 border-black rounded-xl px-3.5 py-2.5 text-xs placeholder:text-slate-400 font-bold shadow-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-slate-800 mb-1">
+                          Jenis Kelamin <span className="text-red-600">*</span>
+                        </label>
+                        <select
+                          id="report-user-gender"
+                          value={userGender}
+                          onChange={(e) => setUserGender(e.target.value)}
+                          className="w-full bg-white border-2 border-black rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] cursor-pointer"
+                          required
+                        >
+                          <option value="">Pilih Jenis Kelamin</option>
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
+                          <option value="Tidak ingin menyebutkan">Tidak ingin menyebutkan</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-slate-800 mb-1">
+                          Kota / Kabupaten <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          id="report-user-city"
+                          type="text"
+                          placeholder="Contoh: Surabaya"
+                          value={userKota}
+                          onChange={(e) => setUserKota(e.target.value)}
+                          className="w-full bg-white border-2 border-black rounded-xl px-3.5 py-2.5 text-xs placeholder:text-slate-400 font-bold shadow-xs focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+                          required
+                        />
+                      </div>
+                    </div>
+
                     <button
                       id="report-submit-btn"
                       type="submit"
-                      className="bg-[#FF71CF] hover:bg-white text-black font-black text-xs px-6 py-3.5 rounded-xl transition-all cursor-pointer border-2 border-black shadow-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none shrink-0"
+                      className="w-full bg-[#FF71CF] hover:bg-[#8B5CF6] hover:text-white text-black font-black text-xs px-6 py-3.5 rounded-xl transition-all cursor-pointer border-2 border-black shadow-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none mt-2"
                     >
                       Kirim Analisis Lengkap
                     </button>

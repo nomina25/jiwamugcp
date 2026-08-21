@@ -64,20 +64,20 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
               <span className="font-sans font-extrabold text-xl text-[#1A1A1A] tracking-tighter block leading-none">
                 JIWAMU
               </span>
-              <span className="text-[10px] font-mono text-[#1A1A1A]/70 block font-bold uppercase tracking-wider mt-1">
+              <span className="text-xs font-mono text-[#1A1A1A]/80 block font-bold uppercase tracking-wider mt-0.5">
                 Ecosystem
               </span>
             </div>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
             {menuItems.map((item) => (
               <button
                 key={item.label}
                 id={`nav-${item.hash}`}
                 onClick={() => navigateTo(item.hash)}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`px-3.5 lg:px-4 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${
                   currentHash === item.hash 
                     ? "bg-[#FFD600] text-[#1A1A1A] brutal-border-thin" 
                     : "text-[#1A1A1A] hover:text-[#8B5CF6] hover:bg-[#FDF4FF]"
@@ -93,14 +93,14 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
                 id="nav-sumber-daya-dropdown"
                 onClick={() => setActiveDropdown(activeDropdown === "sumber-daya" ? null : "sumber-daya")}
                 onMouseEnter={() => setActiveDropdown("sumber-daya")}
-                className={`flex items-center gap-1 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 lg:px-4 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${
                   subResources.some(r => r.hash === currentHash)
                     ? "bg-[#FFD600] text-[#1A1A1A] brutal-border-thin"
                     : "text-[#1A1A1A] hover:text-[#8B5CF6] hover:bg-[#FDF4FF]"
                 }`}
               >
                 Sumber Daya
-                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                <ChevronDown className="w-4 h-4 opacity-70" />
               </button>
               
               <AnimatePresence>
@@ -110,14 +110,14 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     onMouseLeave={() => setActiveDropdown(null)}
-                    className="absolute right-0 mt-2 w-44 bg-white rounded-xl brutal-border brutal-shadow py-1.5 z-50 overflow-hidden"
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl brutal-border brutal-shadow py-2 z-50 overflow-hidden"
                   >
                     {subResources.map((sub) => (
                       <button
                         key={sub.label}
                         id={`nav-sub-${sub.hash}`}
                         onClick={() => navigateTo(sub.hash)}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-bold block cursor-pointer transition-all ${
+                        className={`w-full text-left px-4 py-2.5 text-sm font-bold block cursor-pointer transition-all ${
                           currentHash === sub.hash 
                             ? "bg-[#FEF08A] text-[#1A1A1A] font-extrabold" 
                             : "text-slate-700 hover:bg-[#FDF4FF] hover:text-[#8B5CF6]"
@@ -137,14 +137,14 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
                 id="nav-gerakan-dropdown"
                 onClick={() => setActiveDropdown(activeDropdown === "gerakan" ? null : "gerakan")}
                 onMouseEnter={() => setActiveDropdown("gerakan")}
-                className={`flex items-center gap-1 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 lg:px-4 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${
                   subMovement.some(m => m.hash === currentHash)
                     ? "bg-[#FFD600] text-[#1A1A1A] brutal-border-thin"
                     : "text-[#1A1A1A] hover:text-[#8B5CF6] hover:bg-[#FDF4FF]"
                 }`}
               >
                 Gerakan
-                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                <ChevronDown className="w-4 h-4 opacity-70" />
               </button>
 
               <AnimatePresence>
@@ -154,14 +154,14 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     onMouseLeave={() => setActiveDropdown(null)}
-                    className="absolute right-0 mt-2 w-44 bg-white rounded-xl brutal-border brutal-shadow py-1.5 z-50 overflow-hidden"
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-xl brutal-border brutal-shadow py-2 z-50 overflow-hidden"
                   >
                     {subMovement.map((sub) => (
                       <button
                         key={sub.label}
                         id={`nav-sub-${sub.hash}`}
                         onClick={() => navigateTo(sub.hash)}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-bold block cursor-pointer transition-all ${
+                        className={`w-full text-left px-4 py-2.5 text-sm font-bold block cursor-pointer transition-all ${
                           currentHash === sub.hash 
                             ? "bg-[#FEF08A] text-[#1A1A1A] font-extrabold" 
                             : "text-slate-700 hover:bg-[#FDF4FF] hover:text-[#8B5CF6]"
@@ -181,7 +181,7 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
             <button
               id="cta-tes-kelekatan-header"
               onClick={() => navigateTo("tes-kelekatan")}
-              className="inline-flex items-center gap-1.5 bg-[#FF71CF] hover:bg-[#8B5CF6] hover:text-white text-black text-xs font-extrabold px-5 py-2.5 rounded-xl brutal-border brutal-shadow transition-all cursor-pointer select-none active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              className="inline-flex items-center gap-2 bg-[#FF71CF] hover:bg-[#8B5CF6] hover:text-white text-black text-sm font-extrabold px-5 py-2.5 rounded-xl brutal-border brutal-shadow transition-all cursor-pointer select-none active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
               <UserCheck className="w-4 h-4 shrink-0" />
               Tes Kelekatan
@@ -230,7 +230,7 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
               ))}
 
               <div className="border-t-2 border-black pt-3">
-                <span className="block px-4 text-xxs font-extrabold text-[#1A1A1A]/60 uppercase tracking-wider mb-2">
+                <span className="block px-4 text-xs font-extrabold text-slate-600 uppercase tracking-wider mb-2">
                   Sumber Daya
                 </span>
                 {subResources.map((sub) => (
@@ -247,7 +247,7 @@ export default function Header({ currentHash, setHash }: HeaderProps) {
               </div>
 
               <div className="border-t-2 border-black pt-3">
-                <span className="block px-4 text-xxs font-extrabold text-[#1A1A1A]/60 uppercase tracking-wider mb-2">
+                <span className="block px-4 text-xs font-extrabold text-slate-600 uppercase tracking-wider mb-2">
                   Gerakan
                 </span>
                 {subMovement.map((sub) => (
