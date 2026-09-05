@@ -59,6 +59,8 @@ export interface MajalahEdisi {
   deskripsi: string;
   cover: string;
   pdfUrl: string;
+  flipbookUrl?: string; // e.g. "https://online.fliphtml5.com/MajalahJiwamu/..."
+  slug?: string;        // e.g. "edisi1" or "edisi-agustus-2026"
 }
 
 export interface Artikel {

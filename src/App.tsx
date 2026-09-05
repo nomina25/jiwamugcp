@@ -26,9 +26,22 @@ import { getUnsplashDirectUrl, handleImageError } from "./utils/image";
 // Magazines static list
 const initialMajalahList: MajalahEdisi[] = [
   {
+    id: "Ed. 23-2026",
+    nomor: "Edisi 23",
+    bulanTahun: "Agustus 2026",
+    slug: "edisi1",
+    flipbookUrl: "https://online.fliphtml5.com/MajalahJiwamu/Majalah-Jiwamu-Edisi-Agustus-2026/",
+    tema: "Menemukan Kembali Rumah di Dalam Diri",
+    deskripsi: "Edisi spesial Agustus 2026: Mengupas tuntas pemulihan keterikatan batin (attachment repair), merajut rasa aman emosional di tengah dinamika dunia modern, dan menelaah kembali kearifan welas asih Nusantara.",
+    cover: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=600&auto=format&fit=crop",
+    pdfUrl: "https://online.fliphtml5.com/MajalahJiwamu/Majalah-Jiwamu-Edisi-Agustus-2026/"
+  },
+  {
     id: "Ed. 22-2026",
     nomor: "Edisi 22",
     bulanTahun: "Juni 2026",
+    slug: "edisi22",
+    flipbookUrl: "https://online.fliphtml5.com/MajalahJiwamu/Majalah-Jiwamu-Edisi-Agustus-2026/",
     tema: "Membongkar Topeng 'Si Baik-Baik Saja'",
     deskripsi: "Mengupas bagaimana kebudayaan ketimuran membentuk pola represi emosional sejak dini, dan cara melatih kepekaan asertif untuk menyatakan kebutuhan emosional kita tanpa takut dianggap lemah atau cengeng.",
     cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop",
@@ -38,6 +51,8 @@ const initialMajalahList: MajalahEdisi[] = [
     id: "Ed. 21-2026",
     nomor: "Edisi 21",
     bulanTahun: "Mei 2026",
+    slug: "edisi21",
+    flipbookUrl: "https://online.fliphtml5.com/MajalahJiwamu/Majalah-Jiwamu-Edisi-Agustus-2026/",
     tema: "Rupture-Repair dalam Pertemanan",
     deskripsi: "Kenapa konflik kecil bisa membuat kita menjauh dari sahabat dekat? Meninjau keretakan hubungan relasional dari sudut pandang teori kelekatan, serta formula praktis mereparasi rasa aman yang sempat pudar.",
     cover: "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?q=80&w=600&auto=format&fit=crop",
@@ -47,6 +62,8 @@ const initialMajalahList: MajalahEdisi[] = [
     id: "Ed. 20-2026",
     nomor: "Edisi 20",
     bulanTahun: "April 2026",
+    slug: "edisi20",
+    flipbookUrl: "https://online.fliphtml5.com/MajalahJiwamu/Majalah-Jiwamu-Edisi-Agustus-2026/",
     tema: "Dekolonisasi Batin Nusantara",
     deskripsi: "Eksplorasi panjang tim peneliti PANJI mengenai cara masyarakat Indonesia merawat kewarasan jiwanya secara komunal lewat laku tirakat, kidung penyembuhan, dan kearifan gotong royong sebelum maraknya terapi modern.",
     cover: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?q=80&w=600&auto=format&fit=crop",
@@ -261,7 +278,20 @@ export default function App() {
           setDoc(doc(db, "magazines", item.id), item);
         });
       } else {
-        const list = snap.docs.map(d => d.data() as MajalahEdisi);
+        const list = snap.docs.map(d => {
+          const m = d.data() as MajalahEdisi;
+          const fallbackSlug = m.slug || (m.nomor ? m.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : m.id.toLowerCase().replace(/[^a-z0-9]/g, "-"));
+          return {
+            ...m,
+            slug: fallbackSlug
+          };
+        });
+
+        // Seed initial editions (like August 2026 / Ed. 23-2026) if not present
+        if (!list.some(m => m.id === "Ed. 23-2026" || m.slug === "edisi1")) {
+          setDoc(doc(db, "magazines", initialMajalahList[0].id), initialMajalahList[0]);
+        }
+
         setMajalahList(list);
       }
     });
@@ -382,7 +412,14 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       // Parse the hash string (remove leading '#')
-      const hash = window.location.hash.substring(1);
+      let hash = window.location.hash.substring(1);
+      // Support clean pathname like /majalah/edisi1 if no hash is present
+      if (!hash && window.location.pathname && window.location.pathname !== "/") {
+        const path = window.location.pathname.replace(/^\/+/, "");
+        if (path) {
+          hash = path;
+        }
+      }
       setCurrentHash(hash);
       if (hash !== "artikel") {
         setActiveArticleId(null);
@@ -394,7 +431,11 @@ export default function App() {
     handleHashChange();
 
     window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    window.addEventListener("popstate", handleHashChange);
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("popstate", handleHashChange);
+    };
   }, []);
 
   const setHash = (newHash: string) => {

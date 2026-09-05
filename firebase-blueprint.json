@@ -101,7 +101,9 @@
         "tema": { "type": "string" },
         "deskripsi": { "type": "string" },
         "cover": { "type": "string" },
-        "pdfUrl": { "type": "string" }
+        "pdfUrl": { "type": "string" },
+        "flipbookUrl": { "type": "string" },
+        "slug": { "type": "string" }
       },
       "required": ["id", "tema"]
     },

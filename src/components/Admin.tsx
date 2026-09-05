@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { 
   Lock, Unlock, Database, Plus, Trash2, Edit2, Check, FileText, Video, 
-  BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search, Mail 
+  BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search, Mail, Copy, ExternalLink 
 } from "lucide-react";
 import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping, Alumni, UnduhanItem } from "../types";
 import { db, auth } from "../firebase";
@@ -227,7 +227,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
   });
 
   const [majalahForm, setMajalahForm] = useState<Partial<MajalahEdisi>>({
-    id: "", nomor: "Edisi Baru", bulanTahun: "Juli 2026", tema: "", deskripsi: "", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f", pdfUrl: "#"
+    id: "", nomor: "Edisi Baru", bulanTahun: "Agustus 2026", slug: "", flipbookUrl: "", tema: "", deskripsi: "", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f", pdfUrl: ""
   });
 
   const [kelasForm, setKelasForm] = useState<Partial<ClassItem>>({
@@ -622,14 +622,19 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
 
     try {
       const id = editingId || `Ed. ${majalahList.length + 1}-${new Date().getFullYear()}`;
+      const generatedSlug = (majalahForm.slug || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "") ||
+        (majalahForm.nomor ? majalahForm.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : `edisi${majalahList.length + 1}`);
+
       const updatedMajalah: MajalahEdisi = {
         id,
         nomor: majalahForm.nomor || `Edisi ${majalahList.length + 1}`,
-        bulanTahun: majalahForm.bulanTahun || "Juli 2026",
+        bulanTahun: majalahForm.bulanTahun || "Agustus 2026",
+        slug: generatedSlug,
+        flipbookUrl: majalahForm.flipbookUrl?.trim() || "",
         tema: majalahForm.tema || "",
         deskripsi: majalahForm.deskripsi || "",
         cover: majalahForm.cover || "https://images.unsplash.com/photo-1544947950-fa07a98d237f",
-        pdfUrl: majalahForm.pdfUrl || "#"
+        pdfUrl: majalahForm.pdfUrl || ""
       };
       await setDoc(doc(db, "magazines", id), updatedMajalah);
       resetForms();
@@ -847,7 +852,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
       id: "", judul: "", durasi: "10:00", youtubeId: "", thumbnail: "", deskripsi: ""
     });
     setMajalahForm({
-      id: "", nomor: "Edisi Baru", bulanTahun: "Juli 2026", tema: "", deskripsi: "", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f", pdfUrl: "#"
+      id: "", nomor: "Edisi Baru", bulanTahun: "Agustus 2026", slug: "", flipbookUrl: "", tema: "", deskripsi: "", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f", pdfUrl: ""
     });
     setKelasForm({
       id: "", code: "", level: "Level 1", title: "", desc: "", price: "Rp 2.500.000", investment: "Rp 2.500.000",
@@ -890,7 +895,14 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
       setBukuForm(item);
       setTempDaftarIsi((item.daftarIsi || []).join("\n"));
     }
-    if (type === "majalah") setMajalahForm(item);
+    if (type === "majalah") {
+      setMajalahForm({
+        ...item,
+        slug: item.slug || (item.nomor ? item.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : ""),
+        flipbookUrl: item.flipbookUrl || "",
+        pdfUrl: item.pdfUrl || ""
+      });
+    }
     if (type === "proyek") setProyekForm(item);
     if (type === "kelas") {
       setKelasForm(item);
@@ -1565,12 +1577,49 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                   <input
                     type="text"
                     required
-                    placeholder="Juli 2026"
+                    placeholder="Agustus 2026"
                     value={majalahForm.bulanTahun || ""}
                     onChange={(e) => setMajalahForm({ ...majalahForm, bulanTahun: e.target.value })}
                     className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">
+                  Custom Slug / Tautan Bersih (contoh: edisi1 atau edisi-agustus-2026)
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xxs font-mono text-slate-600 font-bold bg-slate-100 px-2.5 py-2 border-2 border-black rounded-xl shrink-0">
+                    jiwamu.com/majalah/
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="edisi1"
+                    value={majalahForm.slug || ""}
+                    onChange={(e) => setMajalahForm({ ...majalahForm, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    className="flex-1 px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium mt-1">
+                  Tautan langsung yang mudah diingat untuk dibagikan ke WhatsApp / medsos.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">
+                  Flipbook URL (FlipHTML5 / Embed Link)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://online.fliphtml5.com/MajalahJiwamu/Majalah-Jiwamu-Edisi-Agustus-2026/"
+                  value={majalahForm.flipbookUrl || ""}
+                  onChange={(e) => setMajalahForm({ ...majalahForm, flipbookUrl: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
+                />
+                <p className="text-[10px] text-[#8B5CF6] font-bold mt-1">
+                  💡 Salin tautan flipbook FlipHTML5 Anda. Pembaca web dapat membolak-balik halaman majalah secara interaktif di web Jiwamu.
+                </p>
               </div>
 
               <div>
@@ -1585,15 +1634,27 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                 />
               </div>
 
-              <div>
-                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Cover Depan (URL)</label>
-                <input
-                  type="text"
-                  placeholder="https://images.unsplash.com/..."
-                  value={majalahForm.cover || ""}
-                  onChange={(e) => setMajalahForm({ ...majalahForm, cover: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Cover Depan (URL)</label>
+                  <input
+                    type="text"
+                    placeholder="https://images.unsplash.com/..."
+                    value={majalahForm.cover || ""}
+                    onChange={(e) => setMajalahForm({ ...majalahForm, cover: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Link Unduh PDF (Opsional)</label>
+                  <input
+                    type="text"
+                    placeholder="https://... naskah PDF"
+                    value={majalahForm.pdfUrl || ""}
+                    onChange={(e) => setMajalahForm({ ...majalahForm, pdfUrl: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -2558,26 +2619,67 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
             {/* List: MAJALAH */}
             {activeTab === "majalah" && majalahList
               .filter(m => m.tema.toLowerCase().includes(searchQuery.toLowerCase()) || m.nomor.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map((maj) => (
-                <div key={maj.id} className="p-3 border-2 border-black rounded-xl hover:bg-[#FDF4FF] transition-all flex justify-between items-start gap-4 mb-3 brutal-shadow-sm bg-white animate-fade-in">
-                  <div className="flex gap-3 items-center">
-                    <img src={maj.cover} alt={maj.tema} className="w-10 h-14 object-cover rounded border border-black bg-slate-100 shrink-0" />
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] text-slate-500 font-mono font-bold">{maj.id} ({maj.bulanTahun})</span>
-                      <h3 className="font-sans font-extrabold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">Tema: {maj.tema}</h3>
-                      <p className="text-[10px] text-slate-600 font-semibold">{maj.nomor}</p>
+              .map((maj) => {
+                const cleanSlug = maj.slug || (maj.nomor ? maj.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : maj.id.toLowerCase().replace(/[^a-z0-9]/g, "-"));
+                return (
+                  <div key={maj.id} className="p-3 border-2 border-black rounded-xl hover:bg-[#FDF4FF] transition-all flex justify-between items-start gap-4 mb-3 brutal-shadow-sm bg-white animate-fade-in">
+                    <div className="flex gap-3 items-center min-w-0">
+                      <img src={maj.cover} alt={maj.tema} className="w-11 h-15 object-cover rounded-lg border-2 border-black bg-slate-100 shrink-0" />
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-slate-500 font-mono font-bold">{maj.id} ({maj.bulanTahun})</span>
+                          {maj.flipbookUrl ? (
+                            <span className="text-[9px] bg-[#D9F99D] text-black border border-black px-1.5 py-0.5 rounded-full font-black font-mono">
+                              📖 Flipbook Aktif
+                            </span>
+                          ) : (
+                            <span className="text-[9px] bg-slate-100 text-slate-500 border border-slate-300 px-1.5 py-0.5 rounded-full font-bold font-mono">
+                              PDF Saja
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-sans font-extrabold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">Tema: {maj.tema}</h3>
+                        <p className="text-[10px] text-slate-600 font-semibold">{maj.nomor}</p>
+                        
+                        <div className="flex items-center gap-1.5 pt-0.5 flex-wrap text-[10px] font-mono">
+                          <span className="text-[#8B5CF6] font-bold bg-[#FDF4FF] px-1.5 py-0.5 rounded border border-purple-200">
+                            /{cleanSlug}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const shareUrl = `${window.location.origin}/majalah/${cleanSlug}`;
+                              navigator.clipboard.writeText(shareUrl);
+                              alert(`Tautan berhasil disalin:\n${shareUrl}`);
+                            }}
+                            className="inline-flex items-center gap-1 text-[9px] bg-white hover:bg-[#FFD600] px-2 py-0.5 border border-black rounded-lg font-black cursor-pointer shadow-none"
+                            title="Salin Tautan"
+                          >
+                            <Copy className="w-2.5 h-2.5" /> Salin Link
+                          </button>
+                          <a
+                            href={`#majalah/${cleanSlug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[9px] bg-[#BFDBFE] hover:bg-white text-black px-2 py-0.5 border border-black rounded-lg font-black cursor-pointer"
+                            title="Buka Reader"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" /> Reader
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => handleStartEdit(maj, "majalah")} className="p-1.5 border border-black rounded-lg bg-white hover:bg-[#FF71CF] text-black cursor-pointer shadow-sm active:translate-y-0.5">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDelete(maj.id, "majalah")} className="p-1.5 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm active:translate-y-0.5">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => handleStartEdit(maj, "majalah")} className="p-1.5 border border-black rounded-lg bg-white hover:bg-[#FF71CF] text-black cursor-pointer shadow-sm active:translate-y-0.5">
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => handleDelete(maj.id, "majalah")} className="p-1.5 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm active:translate-y-0.5">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
             {/* List: RISET PROYEK */}
             {activeTab === "proyek" && proyekList
