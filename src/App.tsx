@@ -219,17 +219,22 @@ export default function App() {
   const [currentHash, setCurrentHash] = useState("");
   const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
 
-  // Lifted dynamic states synced to Cloud Firebase Firestore
-  const [bukuList, setBukuList] = useState<Buku[]>([]);
-  const [proyekList, setProyekList] = useState<Proyek[]>([]);
-  const [artikelList, setArtikelList] = useState<Artikel[]>([]);
-  const [videoList, setVideoList] = useState<VideoItem[]>([]);
-  const [majalahList, setMajalahList] = useState<MajalahEdisi[]>([]);
-  const [unduhanList, setUnduhanList] = useState<UnduhanItem[]>([]);
-  const [trainersList, setTrainersList] = useState<Trainer[]>([]);
-  const [pamongList, setPamongList] = useState<Pendamping[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [alumniList, setAlumniList] = useState<AlumniType[]>([]);
+  // Lifted dynamic states synced to Cloud Firebase Firestore (initialized with static fallback for offline resilience)
+  const [bukuList, setBukuList] = useState<Buku[]>(initialBukuList);
+  const [proyekList, setProyekList] = useState<Proyek[]>(initialProyekList);
+  const [artikelList, setArtikelList] = useState<Artikel[]>(initialArtikelList);
+  const [videoList, setVideoList] = useState<VideoItem[]>(initialVideoList);
+  const [majalahList, setMajalahList] = useState<MajalahEdisi[]>(initialMajalahList);
+  const [unduhanList, setUnduhanList] = useState<UnduhanItem[]>(initialUnduhanList);
+  const [trainersList, setTrainersList] = useState<Trainer[]>([
+    { id: "tr-01", nama: "Fakhrun Siraj, CABP", gelar: "CABP", pengalaman: "Berpengalaman 10+ tahun", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop" },
+    { id: "tr-02", nama: "Cin Hapsari Tomoidjojo, CABP", gelar: "CABP", pengalaman: "Berpengalaman 10+ tahun", foto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop" },
+    { id: "tr-03", nama: "Muhammad Syibbli Z., CABP", gelar: "CABP", pengalaman: "Berpengalaman 10+ tahun", foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop" },
+    { id: "tr-04", nama: "Juan Lee (Yen), CABP", gelar: "CABP", pengalaman: "Berpengalaman 10+ tahun", foto: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop" }
+  ]);
+  const [pamongList, setPamongList] = useState<Pendamping[]>(initialPendampingList);
+  const [classesList, setClassesList] = useState<any[]>(defaultClasses);
+  const [alumniList, setAlumniList] = useState<AlumniType[]>(initialAlumniList);
   const [layananSettings, setLayananSettings] = useState<any>(null);
   const [tentangKamiSettings, setTentangKamiSettings] = useState<any>(null);
 
@@ -239,43 +244,49 @@ export default function App() {
     const unsubArticles = onSnapshot(collection(db, "articles"), (snap) => {
       if (snap.empty) {
         initialArtikelList.forEach(item => {
-          setDoc(doc(db, "articles", item.id), item);
+          setDoc(doc(db, "articles", item.id), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as Artikel);
         setArtikelList(list);
       }
+    }, (err) => {
+      console.warn("Firestore articles offline/sync notice:", err?.message);
     });
 
     // 2. Videos Sync
     const unsubVideos = onSnapshot(collection(db, "videos"), (snap) => {
       if (snap.empty) {
         initialVideoList.forEach(item => {
-          setDoc(doc(db, "videos", item.id), item);
+          setDoc(doc(db, "videos", item.id), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as VideoItem);
         setVideoList(list);
       }
+    }, (err) => {
+      console.warn("Firestore videos offline/sync notice:", err?.message);
     });
 
     // 3. Books Sync
     const unsubBooks = onSnapshot(collection(db, "books"), (snap) => {
       if (snap.empty) {
         initialBukuList.forEach(item => {
-          setDoc(doc(db, "books", item.slug), item);
+          setDoc(doc(db, "books", item.slug), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as Buku);
         setBukuList(list);
       }
+    }, (err) => {
+      console.warn("Firestore books offline/sync notice:", err?.message);
     });
 
     // 4. Magazines Sync
     const unsubMagazines = onSnapshot(collection(db, "magazines"), (snap) => {
       if (snap.empty) {
         initialMajalahList.forEach(item => {
-          setDoc(doc(db, "magazines", item.id), item);
+          setDoc(doc(db, "magazines", item.id), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => {
@@ -289,35 +300,41 @@ export default function App() {
 
         // Seed initial editions (like August 2026 / Ed. 23-2026) if not present
         if (!list.some(m => m.id === "Ed. 23-2026" || m.slug === "edisi1")) {
-          setDoc(doc(db, "magazines", initialMajalahList[0].id), initialMajalahList[0]);
+          setDoc(doc(db, "magazines", initialMajalahList[0].id), initialMajalahList[0]).catch(() => {});
         }
 
         setMajalahList(list);
       }
+    }, (err) => {
+      console.warn("Firestore magazines offline/sync notice:", err?.message);
     });
 
     // 5. Projects Sync
     const unsubProjects = onSnapshot(collection(db, "projects"), (snap) => {
       if (snap.empty) {
         initialProyekList.forEach(item => {
-          setDoc(doc(db, "projects", item.id), item);
+          setDoc(doc(db, "projects", item.id), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as Proyek);
         setProyekList(list);
       }
+    }, (err) => {
+      console.warn("Firestore projects offline/sync notice:", err?.message);
     });
 
     // 6. Downloads Sync
     const unsubDownloads = onSnapshot(collection(db, "downloads"), (snap) => {
       if (snap.empty) {
         initialUnduhanList.forEach(item => {
-          setDoc(doc(db, "downloads", item.id), item);
+          setDoc(doc(db, "downloads", item.id), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as UnduhanItem);
         setUnduhanList(list);
       }
+    }, (err) => {
+      console.warn("Firestore downloads offline/sync notice:", err?.message);
     });
 
     // 7. Trainers Sync
@@ -330,12 +347,14 @@ export default function App() {
     const unsubTrainers = onSnapshot(collection(db, "trainers"), (snap) => {
       if (snap.empty) {
         defaultTrainers.forEach(item => {
-          setDoc(doc(db, "trainers", item.id || `tr-${Date.now()}`), item);
+          setDoc(doc(db, "trainers", item.id || `tr-${Date.now()}`), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as Trainer);
         setTrainersList(list);
       }
+    }, (err) => {
+      console.warn("Firestore trainers offline/sync notice:", err?.message);
     });
 
     // 8. Pamong Sync
@@ -343,36 +362,42 @@ export default function App() {
       if (snap.empty) {
         initialPendampingList.forEach((item, idx) => {
           const id = `pmg-${100 + idx}`;
-          setDoc(doc(db, "pamong", id), { ...item, id });
+          setDoc(doc(db, "pamong", id), { ...item, id }).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as Pendamping);
         setPamongList(list);
       }
+    }, (err) => {
+      console.warn("Firestore pamong offline/sync notice:", err?.message);
     });
 
     // 9. Classes Sync
     const unsubClasses = onSnapshot(collection(db, "classes"), (snap) => {
       if (snap.empty) {
         defaultClasses.forEach(item => {
-          setDoc(doc(db, "classes", item.id), item);
+          setDoc(doc(db, "classes", item.id), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data());
         setClassesList(list);
       }
+    }, (err) => {
+      console.warn("Firestore classes offline/sync notice:", err?.message);
     });
 
     // 10. Alumni Sync
     const unsubAlumni = onSnapshot(collection(db, "alumni"), (snap) => {
       if (snap.empty) {
         initialAlumniList.forEach(item => {
-          setDoc(doc(db, "alumni", item.nia), item);
+          setDoc(doc(db, "alumni", item.nia), item).catch(() => {});
         });
       } else {
         const list = snap.docs.map(d => d.data() as AlumniType);
         setAlumniList(list);
       }
+    }, (err) => {
+      console.warn("Firestore alumni offline/sync notice:", err?.message);
     });
 
     // 11. Layanan Settings Sync
@@ -382,6 +407,8 @@ export default function App() {
       } else {
         setLayananSettings(null);
       }
+    }, (err) => {
+      console.warn("Firestore layanan settings offline/sync notice:", err?.message);
     });
 
     // 12. Tentang Kami Settings Sync
@@ -391,6 +418,8 @@ export default function App() {
       } else {
         setTentangKamiSettings(null);
       }
+    }, (err) => {
+      console.warn("Firestore tentang_kami offline/sync notice:", err?.message);
     });
 
     return () => {

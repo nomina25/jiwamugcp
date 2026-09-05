@@ -312,26 +312,6 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
               )}
             </div>
           </div>
-
-          {/* Clean URL Banner Badge */}
-          <div className="flex items-center justify-between gap-3 bg-[#FEF08A] border-2 border-black rounded-2xl p-3 px-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black bg-black text-[#FEF08A] px-2 py-0.5 rounded font-mono">
-                URL KHUSUS
-              </span>
-              <p className="text-xs font-mono font-black text-slate-900 truncate">
-                jiwamu.com/majalah/{activeSlug}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleCopyLink(activeSlug)}
-                className="text-[11px] font-black bg-white hover:bg-black hover:text-white px-3 py-1 rounded-lg border border-black shadow-sm cursor-pointer transition-all"
-              >
-                {copiedSlug === activeSlug ? "✓ Berhasil Disalin" : "Salin Tautan Ini"}
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Embedded Interactive Flipbook Viewer */}
@@ -622,8 +602,8 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
                   <span className="text-[#8B5CF6] font-mono text-xs font-black bg-[#FDF4FF] border border-black px-3 py-1.5 rounded-xl inline-block shadow-sm">
                     {latestEdition.nomor} · {latestEdition.bulanTahun}
                   </span>
-                  <span className="text-xxs font-mono font-bold bg-[#FEF08A] text-black border border-black px-2.5 py-1 rounded-lg">
-                    🔗 jiwamu.com/majalah/{latestEdition.slug || "edisi1"}
+                  <span className="text-xxs font-mono font-bold bg-[#F1F5F9] text-slate-700 border border-black px-2.5 py-1 rounded-lg">
+                    Edisi Khusus
                   </span>
                 </div>
                 <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-[#1A1A1A]">
