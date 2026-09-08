@@ -484,6 +484,8 @@ export default function App() {
             setHash={setHash} 
             artikelList={artikelList} 
             videoList={videoList} 
+            majalahList={majalahList}
+            bukuList={bukuList}
             onViewArticle={(id) => {
               setActiveArticleId(id);
               setHash("artikel");

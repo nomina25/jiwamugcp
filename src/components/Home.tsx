@@ -1,20 +1,39 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, HelpCircle, Send, CheckCircle2, Phone, Youtube, Facebook, Instagram, Radio, ShoppingBag, Play } from "lucide-react";
-import { Artikel, VideoItem } from "../types";
+import { 
+  ArrowRight, HelpCircle, Send, CheckCircle2, Phone, Youtube, Facebook, 
+  Instagram, Radio, ShoppingBag, Play, BookOpen, Sparkles, BookMarked, 
+  Clock, Calendar, ChevronRight 
+} from "lucide-react";
+import { Artikel, VideoItem, MajalahEdisi, Buku } from "../types";
 import { getUnsplashDirectUrl, handleImageError } from "../utils/image";
 
 interface HomeProps {
   setHash: (hash: string) => void;
   artikelList?: Artikel[];
   videoList?: VideoItem[];
+  majalahList?: MajalahEdisi[];
+  bukuList?: Buku[];
   onViewArticle?: (id: string) => void;
 }
 
-export default function Home({ setHash, artikelList = [], videoList = [], onViewArticle }: HomeProps) {
+export default function Home({ 
+  setHash, 
+  artikelList = [], 
+  videoList = [], 
+  majalahList = [], 
+  bukuList = [], 
+  onViewArticle 
+}: HomeProps) {
   const [subName, setSubName] = useState("");
   const [subPhone, setSubPhone] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Otomatis mengambil rilisan paling baru secara real-time dari Firestore
+  const latestMajalah = majalahList && majalahList.length > 0 ? majalahList[0] : null;
+  const latestBuku = bukuList && bukuList.length > 0 ? bukuList[0] : null;
+  const latestArticles = artikelList && artikelList.length > 0 ? artikelList.slice(0, 2) : [];
+  const latestVideo = videoList && videoList.length > 0 ? videoList[0] : null;
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,40 +301,135 @@ export default function Home({ setHash, artikelList = [], videoList = [], onView
         </div>
       </section>
 
-      {/* SOROTAN JIWAMU SECTION */}
-      {((artikelList && artikelList.length > 0) || (videoList && videoList.length > 0)) && (
-        <section className="max-w-7xl mx-auto space-y-12 animate-fade-in">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b-4 border-black pb-4">
-            <div className="space-y-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-[#8B5CF6] block font-black">Sorotan Jiwamu</span>
-              <h2 className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-[#1A1A1A]">
-                Edukasi & Media Terbaru
-              </h2>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setHash("artikel")} 
-                className="bg-white hover:bg-[#D9F99D] text-black text-xs font-extrabold px-4 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all"
-              >
-                Lihat Semua Artikel
-              </button>
-              <button 
-                onClick={() => setHash("video")} 
-                className="bg-white hover:bg-red-200 text-black text-xs font-extrabold px-4 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all"
-              >
-                Tonton Semua Video
-              </button>
+      {/* RILISAN TERBARU SECTION (MAJALAH, ARTIKEL, VIDEO & BUKU OTOMATIS REAL-TIME) */}
+      <section className="max-w-7xl mx-auto space-y-10 animate-fade-in">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b-4 border-black pb-4">
+          <div className="space-y-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-black bg-[#FFD600] px-3.5 py-1.5 rounded-full brutal-border-thin shadow-sm inline-block font-black">
+              ✨ Rilisan Terkini
+            </span>
+            <h2 className="font-sans text-3xl sm:text-4xl font-black tracking-tight text-[#1A1A1A]">
+              Koleksi & Konten Terbaru Jiwamu
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-700 font-bold max-w-xl">
+              Edisi majalah bulanan, wawasan kejiwaan, dan serial video reflektif yang diperbarui secara otomatis dari terbitan terbaru.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button 
+              onClick={() => setHash("majalah")} 
+              className="bg-[#FF71CF] hover:bg-black hover:text-white text-black text-xs font-black px-3.5 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            >
+              Majalah
+            </button>
+            <button 
+              onClick={() => setHash("artikel")} 
+              className="bg-[#D9F99D] hover:bg-black hover:text-white text-black text-xs font-black px-3.5 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            >
+              Artikel
+            </button>
+            <button 
+              onClick={() => setHash("video")} 
+              className="bg-red-200 hover:bg-black hover:text-white text-black text-xs font-black px-3.5 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            >
+              Video
+            </button>
+            <button 
+              onClick={() => setHash("buku")} 
+              className="bg-[#BFDBFE] hover:bg-black hover:text-white text-black text-xs font-black px-3.5 py-2 rounded-xl brutal-border brutal-shadow-sm transition-all cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            >
+              Buku
+            </button>
+          </div>
+        </div>
+
+        {/* 1. FEATURED MAJALAH CARD (SPOTLIGHT TERBARU OTOMATIS) */}
+        {latestMajalah && (
+          <div className="bg-[#FDF4FF] border-4 border-black rounded-3xl p-6 sm:p-8 brutal-shadow relative overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+              
+              {/* Cover Column */}
+              <div className="md:col-span-4 shrink-0 max-w-[240px] mx-auto md:mx-0 w-full">
+                <div 
+                  className="relative group cursor-pointer" 
+                  onClick={() => setHash(`majalah/${latestMajalah.slug || (latestMajalah.nomor ? latestMajalah.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : "edisi1")}`)}
+                >
+                  <img 
+                    src={latestMajalah.cover} 
+                    alt={latestMajalah.tema} 
+                    className="w-full aspect-[3/4] object-cover rounded-2xl border-3 border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white group-hover:scale-[1.02] transition-all"
+                  />
+                  <span className="absolute top-2 left-2 bg-[#FF71CF] text-black text-[9px] font-black font-mono px-2 py-0.5 rounded border border-black shadow-sm">
+                    BARU TERBIT
+                  </span>
+                </div>
+              </div>
+
+              {/* Information Column */}
+              <div className="md:col-span-8 space-y-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black uppercase tracking-wider bg-[#FFD600] text-black border border-black px-3 py-1 rounded-xl shadow-sm">
+                    Majalah Bulanan Resmi
+                  </span>
+                  <span className="text-xs font-mono font-black bg-white text-[#8B5CF6] border border-black px-2.5 py-1 rounded-xl shadow-sm">
+                    {latestMajalah.nomor} · {latestMajalah.bulanTahun}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-[#D9F99D] text-black border border-black px-2 py-0.5 rounded-lg">
+                    ISSN 3063-542X
+                  </span>
+                </div>
+
+                <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-[#1A1A1A] leading-snug">
+                  Tema: {latestMajalah.tema}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed max-w-2xl line-clamp-3">
+                  {latestMajalah.deskripsi}
+                </p>
+
+                <div className="pt-2 flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={() => {
+                      const slug = latestMajalah.slug || (latestMajalah.nomor ? latestMajalah.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : "edisi1");
+                      setHash(`majalah/${slug}`);
+                    }}
+                    className="inline-flex items-center gap-2 bg-[#FFD600] hover:bg-white text-black font-black text-xs px-6 py-3.5 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
+                  >
+                    <BookOpen className="w-4 h-4" /> Baca Majalah Interaktif
+                  </button>
+                  <button
+                    onClick={() => setHash("majalah")}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-black bg-white px-4 py-3 rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+                  >
+                    Arsip Terbitan Lainnya →
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
+        )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* 2 Latest Articles */}
-            <div className="lg:col-span-2 space-y-6">
-              <h3 className="text-xs font-mono font-black text-[#1A1A1A] uppercase tracking-wider block bg-[#FFD600] w-fit px-3 py-1 rounded brutal-border-thin shadow-sm">
+        {/* 2. ARTIKEL TERKINI & VIDEO POPULER GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Artikel Terkini (Col 8) */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2">
+              <h3 className="text-xs font-mono font-black text-[#1A1A1A] uppercase tracking-wider bg-[#BAE6FD] px-3 py-1 rounded-xl brutal-border-thin shadow-sm inline-block">
                 Artikel Terkini
               </h3>
+              <button 
+                onClick={() => setHash("artikel")} 
+                className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
+              >
+                Lihat Semua Artikel →
+              </button>
+            </div>
+
+            {latestArticles.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {artikelList.slice(0, 2).map((art) => (
+                {latestArticles.map((art) => (
                   <div key={art.id} className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between brutal-shadow hover:translate-y-[-2px] transition-all">
                     <div>
                       {art.imageUrl && (
@@ -352,60 +466,99 @@ export default function Home({ setHash, artikelList = [], videoList = [], onView
                             setHash("artikel");
                           }
                         }}
-                        className="text-xxs font-black text-blue-600 hover:underline cursor-pointer"
+                        className="text-xs font-black text-blue-600 hover:underline cursor-pointer"
                       >
-                        Baca Artikel
+                        Baca Artikel →
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Latest Video */}
-            {videoList && videoList.length > 0 && (
-              <div className="space-y-6">
-                <h3 className="text-xs font-mono font-black text-[#1A1A1A] uppercase tracking-wider block bg-red-200 w-fit px-3 py-1 rounded brutal-border-thin shadow-sm">
-                  Video Terpopuler
-                </h3>
-                {(() => {
-                  const latestVideo = videoList[0];
-                  return (
-                    <div className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between brutal-shadow hover:translate-y-[-2px] transition-all">
-                      <div className="cursor-pointer" onClick={() => setHash("video")}>
-                        <div className="aspect-video relative overflow-hidden bg-slate-900 flex items-center justify-center">
-                          <img src={latestVideo.thumbnail} alt={latestVideo.judul} className="w-full h-full object-cover opacity-80" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow">
-                              <Play className="w-4 h-4 fill-current ml-0.5" />
-                            </div>
-                          </div>
-                          <div className="absolute bottom-2 right-2 bg-black/75 px-1.5 py-0.5 text-[9px] font-mono text-white rounded">
-                            {latestVideo.durasi}
-                          </div>
-                        </div>
-                        <div className="p-6 space-y-2">
-                          <h4 className="font-sans font-black text-xs sm:text-sm text-slate-900 leading-snug line-clamp-1">{latestVideo.judul}</h4>
-                          <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">{latestVideo.deskripsi}</p>
-                        </div>
-                      </div>
-                      <div className="px-6 pb-6 pt-3 border-t-2 border-black flex justify-between items-center bg-slate-50">
-                        <span className="text-[10px] font-mono text-slate-400">YouTube Talks</span>
-                        <button 
-                          onClick={() => setHash("video")}
-                          className="text-xxs font-black text-blue-600 hover:underline cursor-pointer"
-                        >
-                          Tonton Sekarang
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
+            ) : (
+              <div className="p-8 text-center bg-white border-2 border-black rounded-3xl text-xs font-bold text-slate-500">
+                Belum ada artikel yang diterbitkan.
               </div>
             )}
           </div>
-        </section>
-      )}
+
+          {/* Video Jiwamu Talks & Mini Callout Buku (Col 4) */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2">
+              <h3 className="text-xs font-mono font-black text-[#1A1A1A] uppercase tracking-wider bg-red-200 px-3 py-1 rounded-xl brutal-border-thin shadow-sm inline-block">
+                Video Jiwamu Talks
+              </h3>
+              <button 
+                onClick={() => setHash("video")} 
+                className="text-xs font-bold text-red-700 hover:underline cursor-pointer"
+              >
+                Semua Video →
+              </button>
+            </div>
+
+            {latestVideo ? (
+              <div className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between brutal-shadow hover:translate-y-[-2px] transition-all">
+                <div className="cursor-pointer" onClick={() => setHash("video")}>
+                  <div className="aspect-video relative overflow-hidden bg-slate-900 flex items-center justify-center">
+                    <img src={latestVideo.thumbnail} alt={latestVideo.judul} className="w-full h-full object-cover opacity-80" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg">
+                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-0.5 text-[10px] font-mono text-white rounded">
+                      {latestVideo.durasi}
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-2">
+                    <h4 className="font-sans font-black text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2">{latestVideo.judul}</h4>
+                    <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-3">{latestVideo.deskripsi}</p>
+                  </div>
+                </div>
+                <div className="px-6 pb-6 pt-3 border-t-2 border-black flex justify-between items-center bg-slate-50">
+                  <span className="text-[10px] font-mono text-slate-500 font-bold">YouTube Series</span>
+                  <button 
+                    onClick={() => setHash("video")}
+                    className="text-xs font-black text-red-600 hover:underline cursor-pointer"
+                  >
+                    Tonton Video →
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-white border-2 border-black rounded-3xl text-xs font-bold text-slate-500">
+                Belum ada video diunggah.
+              </div>
+            )}
+
+            {/* Mini Callout Buku Pilihan */}
+            {latestBuku && (
+              <div 
+                onClick={() => setHash("buku")}
+                className="bg-[#D9F99D] border-2 border-black rounded-3xl p-5 brutal-shadow flex items-center gap-4 cursor-pointer hover:bg-white transition-all"
+              >
+                <img 
+                  src={latestBuku.cover} 
+                  alt={latestBuku.judul} 
+                  className="w-14 h-20 object-cover rounded-xl border border-black shrink-0 bg-white shadow-sm"
+                />
+                <div className="space-y-1">
+                  <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-black inline-block">
+                    BUKU TERPILIH
+                  </span>
+                  <h5 className="font-sans text-xs font-black text-slate-900 leading-tight line-clamp-1">
+                    {latestBuku.judul}
+                  </h5>
+                  <p className="text-[10px] text-slate-700 font-medium">Oleh: {latestBuku.pengarang}</p>
+                  <span className="text-xxs font-black text-[#8B5CF6] block pt-1">
+                    Lihat Koleksi Buku →
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </section>
 
       {/* BERLANGGANAN SECTION */}
       <section className="max-w-4xl mx-auto">

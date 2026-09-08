@@ -8,6 +8,7 @@ import {
 import { MajalahEdisi } from "../types";
 import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { copyToClipboard } from "../utils/clipboard";
 
 interface MajalahProps {
   majalahList: MajalahEdisi[];
@@ -58,17 +59,13 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
     }
   };
 
-  const handleCopyLink = (slug: string) => {
-    const cleanUrl = `${window.location.origin}/majalah/${slug}`;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(cleanUrl).then(() => {
-        setCopiedSlug(slug);
-        setTimeout(() => setCopiedSlug(null), 2500);
-      }).catch(() => {
-        prompt("Salin tautan majalah ini:", cleanUrl);
-      });
-    } else {
-      prompt("Salin tautan majalah ini:", cleanUrl);
+  const handleCopyLink = async (slug: string) => {
+    // Generate universal hash URL so it never 404s on any static or SPA server
+    const targetUrl = `${window.location.origin}/#majalah/${slug}`;
+    const ok = await copyToClipboard(targetUrl);
+    if (ok) {
+      setCopiedSlug(slug);
+      setTimeout(() => setCopiedSlug(null), 2500);
     }
   };
 
@@ -226,10 +223,10 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
     );
   }
 
-  // SUBPAGE 2: INTERACTIVE FLIPBOOK READER (#majalah/<slug> e.g. jiwamu.com/majalah/edisi1)
+  // SUBPAGE 2: INTERACTIVE FLIPBOOK READER (#majalah/<slug> e.g. jiwamu.com/#majalah/edisi1)
   if (isReaderPage && activeEdition) {
     const activeSlug = activeEdition.slug || (activeEdition.nomor ? activeEdition.nomor.toLowerCase().replace(/[^a-z0-9]/g, "") : activeEdition.id.toLowerCase().replace(/[^a-z0-9]/g, "-"));
-    const shareUrl = `${window.location.origin}/majalah/${activeSlug}`;
+    const shareUrl = `${window.location.origin}/#majalah/${activeSlug}`;
     const waShareUrl = `https://wa.me/?text=${encodeURIComponent(`Yuk baca Majalah Jiwamu (${activeEdition.nomor}) - "${activeEdition.tema}" secara interaktif di: ${shareUrl}`)}`;
     const otherEditions = majalahList.filter(m => m.id !== activeEdition.id);
 
@@ -424,10 +421,10 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
                   </a>
                 )}
                 <button
-                  onClick={() => handleCopyLink(activeSlug)}
-                  className="inline-flex items-center gap-2 bg-white hover:bg-[#FFD600] text-black font-black text-xs px-5 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+                  onClick={() => navigateTo("majalah")}
+                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-[#FFD600] text-black font-black text-xs px-5 py-3 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
                 >
-                  <Copy className="w-4 h-4" /> Salin Tautan Edisi
+                  <BookOpen className="w-4 h-4" /> Lihat Edisi Lainnya
                 </button>
               </div>
             </div>
@@ -624,7 +621,7 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
                 >
                   <BookOpen className="w-4 h-4" /> Baca Majalah Interaktif
                 </button>
-                {latestEdition.pdfUrl && latestEdition.pdfUrl !== "#" ? (
+                {latestEdition.pdfUrl && latestEdition.pdfUrl !== "#" && (
                   <a 
                     href={latestEdition.pdfUrl}
                     target="_blank"
@@ -633,26 +630,25 @@ export default function Majalah({ majalahList, currentHash, setHash }: MajalahPr
                   >
                     <Download className="w-4 h-4" /> Unduh PDF
                   </a>
-                ) : (
-                  <button 
-                    onClick={() => {
-                      const slug = latestEdition.slug || "edisi1";
-                      handleCopyLink(slug);
-                    }}
-                    className="bg-white hover:bg-[#FF71CF] text-black font-black text-xs px-6 py-3.5 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer flex items-center gap-2"
-                  >
-                    <Copy className="w-4 h-4" /> Salin Tautan Edisi
-                  </button>
                 )}
-                <button
+                <button 
                   onClick={() => {
                     const slug = latestEdition.slug || "edisi1";
                     handleCopyLink(slug);
                   }}
-                  className="bg-white hover:bg-slate-100 text-black font-bold text-xs p-3.5 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
-                  title="Salin Tautan"
+                  className="bg-white hover:bg-[#FF71CF] text-black font-black text-xs px-5 py-3.5 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer flex items-center gap-2"
                 >
-                  {copiedSlug === (latestEdition.slug || "edisi1") ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {copiedSlug === (latestEdition.slug || "edisi1") ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-green-700">Tautan Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Salin Tautan Edisi</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
