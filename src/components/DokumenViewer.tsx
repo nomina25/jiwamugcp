@@ -334,26 +334,6 @@ export default function DokumenViewer({ slug, dokumenList, setHash }: DokumenVie
               Kembali ke Beranda
             </button>
           </div>
-
-          {dokumenList.length > 0 && (
-            <div className="mt-8 pt-8 border-t border-slate-200 text-left">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">
-                Dokumen Tersedia Lainnya:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {dokumenList.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => setHash(`laporan/${item.slug}`)}
-                    className="p-3 bg-slate-50 hover:bg-yellow-50 rounded-xl border border-slate-200 hover:border-black text-left transition-all"
-                  >
-                    <div className="font-bold text-xs text-slate-900">{item.karakter}</div>
-                    <div className="text-[11px] text-slate-500">{item.tipe}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
