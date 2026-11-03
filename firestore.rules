@@ -70,5 +70,10 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read, write: if true;
     }
+
+    // Dokumen Khusus / Special Documents Collection
+    match /dokumen_khusus/{docId} {
+      allow read, write: if true;
+    }
   }
 }

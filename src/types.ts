@@ -117,3 +117,25 @@ export interface AdminUser {
   createdAt: string;
 }
 
+export interface DokumenKhusus {
+  id: string;
+  slug: string;
+  judul: string;
+  tipe: string;
+  karakter: string;
+  badge: string;
+  warnaBadge?: "emerald" | "amber" | "blue" | "rose" | "purple" | "slate";
+  deskripsi: string;
+  pdfUrl: string;
+  fileSize?: string;
+  pageCount?: string;
+  penulis?: string;
+  organisasi?: string;
+  coverUrl?: string;
+  catatanAkses?: string;
+  isAktif?: boolean;
+  createdAt?: string;
+  downloadCount?: number;
+}
+
+

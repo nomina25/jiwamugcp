@@ -4,7 +4,7 @@ import {
   Lock, Unlock, Database, Plus, Trash2, Edit2, Check, FileText, Video, 
   BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search, Mail, Copy, ExternalLink 
 } from "lucide-react";
-import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping, Alumni, UnduhanItem } from "../types";
+import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping, Alumni, UnduhanItem, DokumenKhusus } from "../types";
 import { db, auth } from "../firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -23,6 +23,8 @@ interface AdminProps {
   setMajalahList: React.Dispatch<React.SetStateAction<MajalahEdisi[]>>;
   unduhanList?: any[];
   setUnduhanList?: React.Dispatch<React.SetStateAction<any[]>>;
+  dokumenKhususList?: DokumenKhusus[];
+  setDokumenKhususList?: React.Dispatch<React.SetStateAction<DokumenKhusus[]>>;
   trainersList?: any[];
   setTrainersList?: React.Dispatch<React.SetStateAction<any[]>>;
   pamongList?: any[];
@@ -68,6 +70,7 @@ export default function Admin({
   videoList, setVideoList,
   majalahList, setMajalahList,
   unduhanList = [], setUnduhanList,
+  dokumenKhususList = [], setDokumenKhususList,
   trainersList = [], setTrainersList,
   pamongList = [], setPamongList,
   classesList = [], setClassesList,
@@ -97,7 +100,7 @@ export default function Admin({
 
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<
-    "artikel" | "video" | "buku" | "majalah" | "proyek" | "kelas" | "instructor" | "pelanggan" | "hasil_tes" | "admin_mgmt" | "unduhan" | "alumni" | "layanan" | "tentangkami"
+    "artikel" | "video" | "buku" | "majalah" | "proyek" | "kelas" | "instructor" | "pelanggan" | "hasil_tes" | "admin_mgmt" | "unduhan" | "dokumen_khusus" | "alumni" | "layanan" | "tentangkami"
   >("artikel");
 
   // Custom non-blocking Delete Confirmation Modal State
@@ -113,6 +116,25 @@ export default function Admin({
   const [unduhanForm, setUnduhanForm] = useState<Partial<UnduhanItem>>({
     id: "", judul: "", ukuran: "1.2 MB", format: "PDF", url: "#", deskripsi: "", imageUrl: ""
   });
+
+  const [dokumenKhususForm, setDokumenKhususForm] = useState<Partial<DokumenKhusus>>({
+    id: "",
+    slug: "",
+    judul: "",
+    tipe: "Laporan Asesmen Attachment",
+    karakter: "",
+    badge: "Secure Attachment",
+    warnaBadge: "emerald",
+    deskripsi: "",
+    pdfUrl: "",
+    fileSize: "2.6 MB",
+    pageCount: "Dokumen Lengkap",
+    penulis: "Muhammad Fakhrun Siraj, CABP",
+    organisasi: "PT Jiwa Media Utama (Jiwamu)",
+    catatanAkses: "Tautan privat khusus untuk peserta & pemilik hasil asesmen resmi Jiwamu.",
+    isAktif: true
+  });
+  const [copiedDocSlug, setCopiedDocSlug] = useState<string | null>(null);
 
   const [alumniForm, setAlumniForm] = useState<Partial<Alumni>>({
     nia: "", nama: "", domisili: "", pelatihan: []
@@ -500,6 +522,42 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
     }
   };
 
+  const handleSaveDokumenKhusus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dokumenKhususForm.slug || !dokumenKhususForm.judul || !dokumenKhususForm.pdfUrl) {
+      alert("Mohon lengkapi Slug Tautan, Judul Dokumen, dan Path/URL PDF!");
+      return;
+    }
+    try {
+      const cleanSlug = (dokumenKhususForm.slug || "").toLowerCase().trim().replace(/[^a-z0-9-]/g, "-");
+      const id = editingId || cleanSlug || `doc-${Date.now()}`;
+      const newDoc: DokumenKhusus = {
+        id,
+        slug: cleanSlug,
+        judul: dokumenKhususForm.judul || "",
+        tipe: dokumenKhususForm.tipe || "Laporan Asesmen Attachment",
+        karakter: dokumenKhususForm.karakter || dokumenKhususForm.judul || "",
+        badge: dokumenKhususForm.badge || "Dokumen Resmi",
+        warnaBadge: (dokumenKhususForm.warnaBadge as any) || "emerald",
+        deskripsi: dokumenKhususForm.deskripsi || "",
+        pdfUrl: dokumenKhususForm.pdfUrl || "",
+        fileSize: dokumenKhususForm.fileSize || "PDF",
+        pageCount: dokumenKhususForm.pageCount || "Dokumen Lengkap",
+        penulis: dokumenKhususForm.penulis || "Muhammad Fakhrun Siraj, CABP",
+        organisasi: dokumenKhususForm.organisasi || "PT Jiwa Media Utama (Jiwamu)",
+        catatanAkses: dokumenKhususForm.catatanAkses || "Tautan privat khusus untuk peserta & penerima resmi Jiwamu.",
+        isAktif: dokumenKhususForm.isAktif !== false,
+        createdAt: dokumenKhususForm.createdAt || new Date().toISOString().split("T")[0]
+      };
+      await setDoc(doc(db, "dokumen_khusus", id), newDoc);
+      resetForms();
+      alert("Dokumen Khusus berhasil disimpan ke cloud database!");
+    } catch (err) {
+      console.error("Error saving dokumen khusus:", err);
+      alert("Gagal menyimpan dokumen khusus: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
   const handleSaveLayananSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -812,6 +870,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
           if (type === "trainer") await deleteDoc(doc(db, "trainers", id));
           if (type === "pamong") await deleteDoc(doc(db, "pamong", id));
           if (type === "unduhan") await deleteDoc(doc(db, "downloads", id));
+          if (type === "dokumen_khusus") await deleteDoc(doc(db, "dokumen_khusus", id));
           if (type === "alumni") await deleteDoc(doc(db, "alumni", id));
           if (type === "admin") {
             if (id === "pratama.dianf@gmail.com") {
@@ -876,6 +935,9 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
     setUnduhanForm({
       id: "", judul: "", ukuran: "1.2 MB", format: "PDF", url: "#", deskripsi: "", imageUrl: ""
     });
+    setDokumenKhususForm({
+      id: "", slug: "", judul: "", tipe: "Laporan Asesmen Attachment", karakter: "", badge: "Secure Attachment", warnaBadge: "emerald", deskripsi: "", pdfUrl: "", fileSize: "2.6 MB", pageCount: "Dokumen Lengkap", penulis: "Muhammad Fakhrun Siraj, CABP", organisasi: "PT Jiwa Media Utama (Jiwamu)", catatanAkses: "Tautan privat khusus untuk peserta & pemilik hasil asesmen resmi Jiwamu.", isAktif: true
+    });
     setAlumniForm({
       nia: "", nama: "", domisili: "", pelatihan: []
     });
@@ -921,6 +983,9 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
     }
     if (type === "unduhan") {
       setUnduhanForm(item);
+    }
+    if (type === "dokumen_khusus") {
+      setDokumenKhususForm(item);
     }
     if (type === "alumni") {
       setAlumniForm(item);
@@ -1168,6 +1233,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
           { key: "kelas", label: "Kelola Kelas", icon: GraduationCap },
           { key: "instructor", label: "Pamong & Trainer", icon: Award },
           { key: "unduhan", label: "Kelola Unduhan", icon: Database },
+          { key: "dokumen_khusus", label: "Dokumen Khusus (Privat)", icon: FileText },
           { key: "alumni", label: "Alumni", icon: Users },
           { key: "layanan", label: "Pengaturan Layanan", icon: Heart },
           { key: "tentangkami", label: "Tentang Kami", icon: UserCheck },
@@ -2214,6 +2280,166 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
             </form>
           )}
 
+          {/* Form: DOKUMEN KHUSUS (UNLISTED / PRIVAT) */}
+          {activeTab === "dokumen_khusus" && (
+            <form onSubmit={handleSaveDokumenKhusus} className="space-y-4">
+              <div className="bg-[#FFFDF0] p-3.5 rounded-xl border-2 border-black text-xxs font-bold text-slate-800 leading-relaxed shadow-xs">
+                🔒 <strong>Sistem Dokumen Privat Resmi:</strong> Dokumen ini <em>unlisted</em> (tidak tampil di navigasi publik). Siapa pun yang memiliki tautan resmi (contoh: <code className="bg-white px-1.5 py-0.5 rounded border border-black font-mono">#laporan/saka</code>) dapat langsung membaca pratinjau dan mengunduh PDF secara instan tanpa perlu PIN/login.
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">
+                  Slug Tautan Unik <span className="text-red-600">*</span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-2 border-2 border-black rounded-xl shrink-0">
+                    /#laporan/
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. saka, sena, sora, sira, worksheet-maret"
+                    value={dokumenKhususForm.slug || ""}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    className="flex-1 px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium mt-1">
+                  Tautan otomatis: <span className="font-mono text-purple-700 font-black">jiwamu.com/#laporan/{dokumenKhususForm.slug || "slug-dokumen"}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">
+                  Judul Dokumen Lengkap <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Laporan Gaya Kelekatan SAKA — Si Kalem (Secure Attachment)"
+                  value={dokumenKhususForm.judul || ""}
+                  onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, judul: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Nama Karakter / Seri</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. SAKA — Si Kalem"
+                    value={dokumenKhususForm.karakter || ""}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, karakter: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Tipe Dokumen</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Laporan Asesmen Attachment"
+                    value={dokumenKhususForm.tipe || ""}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, tipe: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Badge / Kategori</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Secure Attachment"
+                    value={dokumenKhususForm.badge || ""}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, badge: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Warna Badge</label>
+                  <select
+                    value={dokumenKhususForm.warnaBadge || "emerald"}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, warnaBadge: e.target.value as any })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  >
+                    <option value="emerald">Hijau (Emerald - Secure)</option>
+                    <option value="amber">Kuning (Amber - Anxious)</option>
+                    <option value="blue">Biru (Blue - Avoidant)</option>
+                    <option value="rose">Merah Muda (Rose - Fearful)</option>
+                    <option value="purple">Ungu (Purple)</option>
+                    <option value="slate">Abu-abu (Slate)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">
+                  File PDF (Path Internal atau Link Eksternal) <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. /assets/reports/saka-secure.pdf atau https://..."
+                  value={dokumenKhususForm.pdfUrl || ""}
+                  onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, pdfUrl: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
+                />
+                <p className="text-[10px] text-slate-500 font-medium mt-1">
+                  Aset statis internal: <code className="bg-slate-100 px-1 py-0.5 rounded border border-slate-300">/assets/reports/...</code> (tersimpan langsung di domain jiwamu.com tanpa batasan pihak ketiga).
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Ukuran File</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 2.6 MB"
+                    value={dokumenKhususForm.fileSize || ""}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, fileSize: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Penyusun / Fasilitator</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Muhammad Fakhrun Siraj, CABP"
+                    value={dokumenKhususForm.penulis || ""}
+                    onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, penulis: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-bold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">Deskripsi Singkat</label>
+                <textarea
+                  placeholder="Uraikan isi dan pengantar dokumen khusus ini..."
+                  value={dokumenKhususForm.deskripsi || ""}
+                  onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, deskripsi: e.target.value })}
+                  className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-medium outline-none min-h-[90px]"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-[#8B5CF6] text-white border-2 border-black rounded-xl font-black text-xs shadow-sm hover:bg-black hover:text-white"
+                >
+                  {editingId ? "Perbarui Dokumen Khusus" : "Simpan Dokumen Khusus"}
+                </button>
+                {editingId && (
+                  <button type="button" onClick={resetForms} className="px-4 py-2 bg-white border-2 border-black text-black rounded-xl text-xs font-black">
+                    Batal
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
+
           {/* Form: ALUMNI */}
           {activeTab === "alumni" && (
             <form onSubmit={handleSaveAlumni} className="space-y-4">
@@ -2849,6 +3075,129 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                       </div>
                     </div>
                   ))}
+              </div>
+            )}
+
+            {/* List: DOKUMEN KHUSUS (PRIVAT) */}
+            {activeTab === "dokumen_khusus" && (
+              <div className="space-y-4">
+                <div className="bg-[#FFFDF0] p-4 rounded-xl border-2 border-black text-xs font-semibold text-slate-700 space-y-1">
+                  <div className="flex items-center gap-2 font-black text-slate-900">
+                    <Shield className="w-4 h-4 text-emerald-600" />
+                    <span>Daftar Dokumen Privat & Tautan Khusus</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Dokumen berikut dapat langsung diakses publik yang memiliki tautannya. Anda dapat menyalin link resmi di bawah ini untuk dikirimkan melalui WhatsApp atau email ke klien.
+                  </p>
+                </div>
+
+                {dokumenKhususList.length === 0 ? (
+                  <div className="text-center py-10 bg-slate-50 border-2 border-black rounded-xl text-slate-500 font-bold text-xs">
+                    Belum ada dokumen khusus terdaftar. Silakan gunakan form di samping untuk menambahkan dokumen baru.
+                  </div>
+                ) : (
+                  dokumenKhususList
+                    .filter(d => 
+                      d.judul.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                      d.slug.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                      (d.karakter && d.karakter.toLowerCase().includes(searchQuery.toLowerCase()))
+                    )
+                    .map((d) => {
+                      const shareLink = `${window.location.origin}/#laporan/${d.slug}`;
+                      const isCopied = copiedDocSlug === d.slug;
+                      return (
+                        <div 
+                          key={d.id} 
+                          className="p-4 border-2 border-black rounded-xl hover:bg-[#FFFDF0] transition-all bg-white brutal-shadow-sm space-y-3 animate-fade-in"
+                        >
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300">
+                                  {d.badge || "Dokumen Resmi"}
+                                </span>
+                                <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-300 font-bold">
+                                  {d.tipe || "Laporan Asesmen"}
+                                </span>
+                                {d.fileSize && (
+                                  <span className="text-[10px] text-slate-500 font-mono">
+                                    {d.fileSize}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="font-sans font-black text-sm text-slate-900 leading-snug">
+                                {d.judul}
+                              </h3>
+                              {d.deskripsi && (
+                                <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
+                                  {d.deskripsi}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex gap-1.5 shrink-0">
+                              <button 
+                                onClick={() => handleStartEdit(d, "dokumen_khusus")} 
+                                className="p-2 border border-black rounded-lg bg-white hover:bg-[#FF71CF] text-black cursor-pointer shadow-sm"
+                                title="Edit Dokumen"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => handleDelete(d.id, "dokumen_khusus")} 
+                                className="p-2 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm"
+                                title="Hapus Dokumen"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Link and Action Bar */}
+                          <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 text-[11px] font-mono text-purple-800 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
+                              <span className="font-bold">Tautan:</span>
+                              <span className="font-bold">/#laporan/{d.slug}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(shareLink);
+                                  setCopiedDocSlug(d.slug);
+                                  setTimeout(() => setCopiedDocSlug(null), 2500);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD600] hover:bg-[#ffe14d] text-slate-950 rounded-lg border border-black font-black text-xs transition-all shadow-xs"
+                              >
+                                {isCopied ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-800" />
+                                    <span>Tautan Tersalin!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    <span>Salin Tautan</span>
+                                  </>
+                                )}
+                              </button>
+
+                              <a
+                                href={`#laporan/${d.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-lg border border-black font-black text-xs transition-all shadow-xs"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Buka Laman</span>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
               </div>
             )}
 

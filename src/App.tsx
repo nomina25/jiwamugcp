@@ -11,13 +11,15 @@ import ProyekComponent from "./components/Proyek";
 import Alumni from "./components/Alumni";
 import TesKelekatan from "./components/TesKelekatan";
 import Admin from "./components/Admin";
+import DokumenViewer from "./components/DokumenViewer";
 
-import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, UnduhanItem, Trainer, Pendamping, Alumni as AlumniType } from "./types";
+import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, UnduhanItem, Trainer, Pendamping, Alumni as AlumniType, DokumenKhusus } from "./types";
 import { initialAlumniList } from "./data/alumni";
 import { initialBukuList } from "./data/buku";
 import { initialProyekList } from "./data/proyek";
 import { initialArtikelList, initialVideoList, initialUnduhanList } from "./data/sumberDaya";
 import { initialPendampingList } from "./data/layanan";
+import { initialDokumenKhususList } from "./data/dokumenKhusus";
 import { db } from "./firebase";
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 import { Play, X } from "lucide-react";
@@ -235,6 +237,7 @@ export default function App() {
   const [pamongList, setPamongList] = useState<Pendamping[]>(initialPendampingList);
   const [classesList, setClassesList] = useState<any[]>(defaultClasses);
   const [alumniList, setAlumniList] = useState<AlumniType[]>(initialAlumniList);
+  const [dokumenKhususList, setDokumenKhususList] = useState<DokumenKhusus[]>(initialDokumenKhususList);
   const [layananSettings, setLayananSettings] = useState<any>(null);
   const [tentangKamiSettings, setTentangKamiSettings] = useState<any>(null);
 
@@ -422,6 +425,20 @@ export default function App() {
       console.warn("Firestore tentang_kami offline/sync notice:", err?.message);
     });
 
+    // 13. Dokumen Khusus Sync (Special Unlisted Documents)
+    const unsubDokumenKhusus = onSnapshot(collection(db, "dokumen_khusus"), (snap) => {
+      if (snap.empty) {
+        initialDokumenKhususList.forEach(item => {
+          setDoc(doc(db, "dokumen_khusus", item.id), item).catch(() => {});
+        });
+      } else {
+        const list = snap.docs.map(d => d.data() as DokumenKhusus);
+        setDokumenKhususList(list);
+      }
+    }, (err) => {
+      console.warn("Firestore dokumen_khusus offline/sync notice:", err?.message);
+    });
+
     return () => {
       unsubArticles();
       unsubVideos();
@@ -435,6 +452,7 @@ export default function App() {
       unsubAlumni();
       unsubLayananSettings();
       unsubTentangKamiSettings();
+      unsubDokumenKhusus();
     };
   }, []);
 
@@ -536,6 +554,15 @@ export default function App() {
           <TesKelekatan />
         )}
 
+        {/* SPECIAL / PRIVATE UNLISTED DOKUMEN KHUSUS ROUTER */}
+        {(currentHash.startsWith("laporan") || currentHash.startsWith("dokumen")) && (
+          <DokumenViewer 
+            slug={currentHash.replace(/^(laporan|dokumen)[\/-]?/, "")}
+            dokumenList={dokumenKhususList}
+            setHash={setHash}
+          />
+        )}
+
         {currentHash === "admin" && (
           <Admin 
             bukuList={bukuList}
@@ -550,6 +577,8 @@ export default function App() {
             setMajalahList={setMajalahList}
             unduhanList={unduhanList}
             setUnduhanList={setUnduhanList}
+            dokumenKhususList={dokumenKhususList}
+            setDokumenKhususList={setDokumenKhususList}
             trainersList={trainersList}
             setTrainersList={setTrainersList}
             pamongList={pamongList}
