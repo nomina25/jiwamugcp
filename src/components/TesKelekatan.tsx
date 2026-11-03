@@ -370,12 +370,78 @@ export default function TesKelekatan() {
                 </p>
 
                 {isReportSubmitted ? (
-                  <div className="bg-[#D9F99D] border-2 border-black rounded-xl p-4 flex gap-3 items-center text-xs">
-                    <span className="text-lg">✨</span>
-                    <div>
-                      <p className="font-black text-black">Data Berhasil Terkirim!</p>
-                      <p className="text-slate-800 font-bold text-[11px] mt-0.5">Laporan analisis lengkap sedang diproses dan akan segera dikirimkan ke nomor WhatsApp Anda secara otomatis.</p>
+                  <div className="bg-[#D9F99D] border-2 border-black rounded-2xl p-5 sm:p-6 text-xs space-y-4 brutal-shadow-sm">
+                    <div className="flex gap-3 items-start">
+                      <span className="text-2xl">✨</span>
+                      <div>
+                        <p className="font-black text-sm text-black">Data Tersimpan & Laporan Lengkap Siap Diakses!</p>
+                        <p className="text-slate-800 font-bold text-xs mt-1 leading-relaxed">
+                          Data asesmen Anda telah tercatat. Silakan klik tombol di bawah untuk langsung membaca & mengunduh buku laporan lengkap PDF sesuai karakter kelekatan Anda, atau scan QR Code jika ingin membukanya di perangkat HP lain:
+                        </p>
+                      </div>
                     </div>
+                    {(() => {
+                      const s = (results?.style || results?.title || "").toLowerCase();
+                      let slug = "saka";
+                      let namaChar = "SAKA — Si Kalem (Secure)";
+                      if (s.includes("anxious") || s.includes("cemas")) {
+                        slug = "sena";
+                        namaChar = "SENA — Si Paling Nempel (Anxious)";
+                      } else if (s.includes("disorganized") || s.includes("takut") || s.includes("fearful")) {
+                        slug = "sira";
+                        namaChar = "SIRA — Si Bimbang (Fearful-Avoidant)";
+                      } else if (s.includes("avoidant") || s.includes("menghindar")) {
+                        slug = "sora";
+                        namaChar = "SORA — Si Jaga Jarak (Avoidant)";
+                      }
+                      const reportUrl = `${window.location.origin}/#laporan/${slug}`;
+                      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=12&format=png&data=${encodeURIComponent(reportUrl)}`;
+                      return (
+                        <div className="bg-white border-2 border-black rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="space-y-3 text-left flex-1">
+                            <div>
+                              <span className="text-[10px] font-mono font-black uppercase bg-purple-100 text-purple-900 px-2 py-0.5 rounded border border-purple-300">
+                                Tautan Laporan Resmi
+                              </span>
+                              <h5 className="font-black text-sm text-slate-950 mt-1">
+                                {namaChar}
+                              </h5>
+                              <p className="text-[11px] font-mono text-purple-700 font-bold break-all">
+                                jiwamu.com/#laporan/{slug}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={`#laporan/${slug}`}
+                                className="inline-flex items-center gap-2 bg-[#FFD600] hover:bg-[#ffe14d] text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl border-2 border-black brutal-shadow-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+                              >
+                                <span>📄 Buka & Unduh Laporan PDF</span>
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(reportUrl);
+                                }}
+                                className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs px-3.5 py-2.5 rounded-xl border-2 border-black transition-all cursor-pointer"
+                              >
+                                <span>🔗 Salin Link</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-center bg-[#FFFDF0] p-2.5 rounded-xl border-2 border-black shrink-0">
+                            <img
+                              src={qrSrc}
+                              alt={`QR Laporan ${namaChar}`}
+                              className="w-24 h-24 object-contain"
+                            />
+                            <span className="text-[9px] font-black uppercase text-slate-700 mt-1">
+                              Scan di HP Anda
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <form onSubmit={handleSendReport} className="space-y-3">

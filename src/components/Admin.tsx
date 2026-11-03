@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { 
   Lock, Unlock, Database, Plus, Trash2, Edit2, Check, FileText, Video, 
-  BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search, Mail, Copy, ExternalLink 
+  BookOpen, Layers, TrendingUp, Users, Heart, Shield, UserCheck, GraduationCap, Award, Search, Mail, Copy, ExternalLink, QrCode, Upload, X, Send 
 } from "lucide-react";
 import { Buku, Proyek, Artikel, VideoItem, MajalahEdisi, ClassItem, AdminUser, Trainer, Pendamping, Alumni, UnduhanItem, DokumenKhusus } from "../types";
 import { db, auth } from "../firebase";
@@ -135,6 +135,74 @@ export default function Admin({
     isAktif: true
   });
   const [copiedDocSlug, setCopiedDocSlug] = useState<string | null>(null);
+  const [qrModalDoc, setQrModalDoc] = useState<DokumenKhusus | null>(null);
+  const [isUploadingPdf, setIsUploadingPdf] = useState<boolean>(false);
+  const [pdfUploadStatus, setPdfUploadStatus] = useState<string>("");
+
+  const handleDirectPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setPdfUploadStatus("⚠️ Harap pilih file berformat .PDF");
+      return;
+    }
+
+    const rawSlug = (dokumenKhususForm.slug || file.name.replace(/\.pdf$/i, ""))
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    const targetSlug = rawSlug || `dokumen-${Date.now()}`;
+    const sizeMb = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+    setIsUploadingPdf(true);
+    setPdfUploadStatus("Membaca file PDF...");
+
+    try {
+      const arrayBuf = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuf);
+      let binary = "";
+      const step = 32768;
+      for (let i = 0; i < bytes.length; i += step) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + step)));
+      }
+      const b64 = window.btoa(binary);
+      const CHUNK_SIZE = 700000;
+      const totalChunks = Math.ceil(b64.length / CHUNK_SIZE);
+
+      for (let i = 0; i < totalChunks; i++) {
+        setPdfUploadStatus(`Mengunggah ke Cloud Jiwamu (${Math.round(((i + 1) / totalChunks) * 100)}%)...`);
+        const chunkData = b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        await setDoc(doc(db, "dokumen_files", `${targetSlug}_chunk_${i}`), {
+          slug: targetSlug,
+          index: i,
+          totalChunks,
+          data: chunkData,
+        });
+      }
+
+      await setDoc(doc(db, "dokumen_files", `${targetSlug}_meta`), {
+        slug: targetSlug,
+        totalChunks,
+        byteLength: file.size,
+        updatedAt: new Date().toISOString(),
+      });
+
+      setDokumenKhususForm(prev => ({
+        ...prev,
+        slug: prev.slug || targetSlug,
+        fileSize: sizeMb,
+        pdfUrl: `firestore://dokumen_files/${targetSlug}`
+      }));
+      setPdfUploadStatus(`✓ File PDF (${sizeMb}) berhasil disimpan di Cloud Jiwamu!`);
+    } catch (err) {
+      console.error("Gagal mengunggah PDF:", err);
+      setPdfUploadStatus("⚠️ Gagal mengunggah PDF. Coba lagi atau gunakan link Google Drive.");
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  };
 
   const [alumniForm, setAlumniForm] = useState<Partial<Alumni>>({
     nia: "", nama: "", domisili: "", pelatihan: []
@@ -2374,20 +2442,45 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                 </div>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <label className="block text-xxs font-mono uppercase font-black text-slate-700 mb-1">
-                  File PDF (Path Internal atau Link Eksternal) <span className="text-red-600">*</span>
+                  File PDF (Upload Langsung atau Link Google Drive) <span className="text-red-600">*</span>
                 </label>
+
+                <div className="p-3 bg-[#FFFDF0] border-2 border-dashed border-black rounded-xl space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[11px] font-black text-slate-800">
+                      Opsi 1: Upload File PDF dari Laptop/HP
+                    </span>
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD600] hover:bg-[#ffe14d] text-black border-2 border-black rounded-lg text-[11px] font-black cursor-pointer shadow-xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingPdf ? "Mengunggah..." : "Pilih File PDF"}</span>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleDirectPdfUpload}
+                        disabled={isUploadingPdf}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  {pdfUploadStatus && (
+                    <p className="text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-1 rounded border border-purple-200">
+                      {pdfUploadStatus}
+                    </p>
+                  )}
+                </div>
+
                 <input
                   type="text"
                   required
-                  placeholder="e.g. /assets/reports/saka-secure.pdf atau https://..."
+                  placeholder="Opsi 2: Link Google Drive / Path PDF (terisi otomatis jika upload)"
                   value={dokumenKhususForm.pdfUrl || ""}
                   onChange={(e) => setDokumenKhususForm({ ...dokumenKhususForm, pdfUrl: e.target.value })}
                   className="w-full px-3 py-2 border-2 border-black rounded-xl text-xs font-mono font-bold outline-none"
                 />
-                <p className="text-[10px] text-slate-500 font-medium mt-1">
-                  Aset statis internal: <code className="bg-slate-100 px-1 py-0.5 rounded border border-slate-300">/assets/reports/...</code> (tersimpan langsung di domain jiwamu.com tanpa batasan pihak ketiga).
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Mendukung upload PDF langsung ke Cloud Jiwamu maupun link Google Drive (otomatis di-embed tetap di domain <code className="font-bold">jiwamu.com/#laporan/...</code>).
                 </p>
               </div>
 
@@ -3160,7 +3253,17 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                               <span className="font-bold">/#laporan/{d.slug}</span>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setQrModalDoc(d)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F3E8FF] hover:bg-[#E9D5FF] text-purple-950 rounded-lg border border-black font-black text-xs transition-all shadow-xs cursor-pointer"
+                                title="Tampilkan & Unduh QR Code untuk Crew"
+                              >
+                                <QrCode className="w-3.5 h-3.5 text-purple-700" />
+                                <span>QR Code</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={() => {
@@ -3168,7 +3271,7 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                                   setCopiedDocSlug(d.slug);
                                   setTimeout(() => setCopiedDocSlug(null), 2500);
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD600] hover:bg-[#ffe14d] text-slate-950 rounded-lg border border-black font-black text-xs transition-all shadow-xs"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD600] hover:bg-[#ffe14d] text-slate-950 rounded-lg border border-black font-black text-xs transition-all shadow-xs cursor-pointer"
                               >
                                 {isCopied ? (
                                   <>
@@ -3422,13 +3525,46 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                             Waktu Tes: {res.tanggalTes ? new Date(res.tanggalTes).toLocaleString("id-ID") : "-"}
                           </p>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteTestResult(res.id)} 
-                          className="p-2 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm active:translate-y-0.5 shrink-0"
-                          title="Hapus dari Firestore"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {(() => {
+                            const s = (res.gayaKelekatan || "").toLowerCase();
+                            let slug = "saka";
+                            let charName = "SAKA — Si Kalem";
+                            if (s.includes("anxious") || s.includes("cemas")) {
+                              slug = "sena";
+                              charName = "SENA — Si Paling Nempel";
+                            } else if (s.includes("disorganized") || s.includes("takut") || s.includes("fearful")) {
+                              slug = "sira";
+                              charName = "SIRA — Si Bimbang";
+                            } else if (s.includes("avoidant") || s.includes("menghindar")) {
+                              slug = "sora";
+                              charName = "SORA — Si Jaga Jarak";
+                            }
+                            const cleanPhone = (res.whatsapp || "").replace(/[^0-9]/g, "").replace(/^0/, "62");
+                            const reportLink = `${window.location.origin}/#laporan/${slug}`;
+                            const waText = `Halo Kak ${res.nama || ""}, terima kasih sudah mengikuti Asesmen Gaya Kelekatan di Jiwamu! 🌱\n\nBerikut adalah tautan khusus untuk membaca dan mengunduh *Laporan Analisis Lengkap (${charName})* milikmu:\n👉 ${reportLink}\n\nSelamat membaca dan bertumbuh bersama Jiwamu!`;
+                            const waHref = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`;
+                            return (
+                              <a
+                                href={waHref}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-2 border border-black rounded-lg bg-[#D9F99D] hover:bg-[#bef264] text-black font-black text-[11px] shadow-sm transition-all"
+                                title={`Kirim Link Laporan ${charName} via WhatsApp`}
+                              >
+                                <Send className="w-3 h-3" />
+                                <span className="hidden sm:inline">Kirim PDF ke WA</span>
+                              </a>
+                            );
+                          })()}
+                          <button 
+                            onClick={() => handleDeleteTestResult(res.id)} 
+                            className="p-2 border border-black rounded-lg bg-white hover:bg-red-500 hover:text-white text-red-500 cursor-pointer shadow-sm active:translate-y-0.5 shrink-0"
+                            title="Hapus dari Firestore"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -3468,6 +3604,74 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
           </div>
         </div>
       )}
+
+      {/* Crew QR Code Modal in Admin */}
+      {qrModalDoc && (() => {
+        const shareUrl = `${window.location.origin}/#laporan/${qrModalDoc.slug}`;
+        const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=16&format=png&data=${encodeURIComponent(shareUrl)}`;
+        return (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+            <div className="bg-[#FFFDF0] rounded-3xl border-4 border-black p-6 sm:p-8 max-w-md w-full brutal-shadow space-y-4 relative text-center">
+              <button
+                onClick={() => setQrModalDoc(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-white border-2 border-black flex items-center justify-center hover:bg-red-500 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="inline-flex items-center gap-1.5 bg-[#FFD600] border-2 border-black px-3 py-1 rounded-full text-[11px] font-black uppercase">
+                <QrCode className="w-3.5 h-3.5" />
+                <span>QR Code Crew Jiwamu</span>
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-slate-950">
+                  {qrModalDoc.karakter || qrModalDoc.judul}
+                </h3>
+                <p className="text-xs font-bold text-slate-600">
+                  Tunjukkan QR Code ini kepada responden yang telah selesai tes untuk langsung membuka laporan mereka
+                </p>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border-2 border-black brutal-shadow-sm inline-block mx-auto">
+                <img
+                  src={qrImg}
+                  alt={`QR Code ${qrModalDoc.judul}`}
+                  className="w-56 h-56 mx-auto object-contain"
+                />
+              </div>
+
+              <div className="bg-white px-3 py-2 rounded-xl border-2 border-black text-xs font-mono font-bold text-purple-800 break-all">
+                {shareUrl}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareUrl);
+                    setCopiedDocSlug(qrModalDoc.slug);
+                    setTimeout(() => setCopiedDocSlug(null), 2500);
+                  }}
+                  className="py-2.5 px-4 rounded-xl border-2 border-black bg-white hover:bg-slate-100 text-xs font-black text-slate-900 inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{copiedDocSlug === qrModalDoc.slug ? "Tersalin!" : "Salin Link"}</span>
+                </button>
+                <a
+                  href={`#laporan/${qrModalDoc.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-2.5 px-4 rounded-xl border-2 border-black bg-[#FFD600] hover:bg-[#ffe14d] text-xs font-black text-slate-950 inline-flex items-center justify-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Buka Laman</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 

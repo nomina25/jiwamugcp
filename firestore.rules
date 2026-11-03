@@ -75,5 +75,10 @@ service cloud.firestore {
     match /dokumen_khusus/{docId} {
       allow read, write: if true;
     }
+
+    // Dokumen Files / Chunked PDF Storage Collection
+    match /dokumen_files/{chunkId} {
+      allow read, write: if true;
+    }
   }
 }
