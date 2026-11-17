@@ -217,9 +217,23 @@ const defaultClasses = [
   }
 ];
 
+function getInitialHash(): string {
+  if (typeof window === "undefined") return "";
+  let hash = window.location.hash.substring(1);
+  if (!hash && window.location.pathname && window.location.pathname !== "/") {
+    const path = window.location.pathname.replace(/^\/+/, "");
+    if (path) hash = path;
+  }
+  return hash;
+}
+
 export default function App() {
-  const [currentHash, setCurrentHash] = useState("");
+  const [currentHash, setCurrentHash] = useState<string>(getInitialHash);
   const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
+  const [shouldSyncCatalog, setShouldSyncCatalog] = useState<boolean>(() => {
+    const initial = getInitialHash();
+    return initial !== "tes-kelekatan";
+  });
 
   // Lifted dynamic states synced to Cloud Firebase Firestore (initialized with static fallback for offline resilience)
   const [bukuList, setBukuList] = useState<Buku[]>(initialBukuList);
@@ -241,8 +255,16 @@ export default function App() {
   const [layananSettings, setLayananSettings] = useState<any>(null);
   const [tentangKamiSettings, setTentangKamiSettings] = useState<any>(null);
 
+  useEffect(() => {
+    if (currentHash !== "tes-kelekatan" && !shouldSyncCatalog) {
+      setShouldSyncCatalog(true);
+    }
+  }, [currentHash, shouldSyncCatalog]);
+
   // Synchronize Firestore Database with real-time listeners and self-healing seeds
   useEffect(() => {
+    if (!shouldSyncCatalog) return;
+
     // 1. Articles Sync
     const unsubArticles = onSnapshot(collection(db, "articles"), (snap) => {
       if (snap.empty) {
@@ -454,7 +476,7 @@ export default function App() {
       unsubTentangKamiSettings();
       unsubDokumenKhusus();
     };
-  }, []);
+  }, [shouldSyncCatalog]);
 
   useEffect(() => {
     const handleHashChange = () => {

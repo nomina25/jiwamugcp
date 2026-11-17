@@ -1,8 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, Shield, HelpCircle, ArrowRight, RefreshCw, Send } from "lucide-react";
+import { Heart, Shield, HelpCircle, ArrowRight, RefreshCw, Send, Download, FileText, Loader2, CheckCircle2, BookOpen } from "lucide-react";
 import { db } from "../firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc as firestoreDoc, getDoc } from "firebase/firestore";
+
+const STORAGE_KEY = "jiwamu_attachment_test_v1";
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function getReportMeta(styleOrTitle: string) {
+  const s = (styleOrTitle || "").toLowerCase();
+  if (s.includes("anxious") || s.includes("cemas")) {
+    return {
+      slug: "sena",
+      namaChar: "SENA — Si Paling Nempel (Anxious Attachment)",
+      staticPdfUrl: "/assets/reports/sena-anxious.pdf",
+      fileName: "Laporan-Kelekatan-SENA-Anxious-Jiwamu.pdf"
+    };
+  }
+  if (s.includes("disorganized") || s.includes("takut") || s.includes("fearful")) {
+    return {
+      slug: "sira",
+      namaChar: "SIRA — Si Bimbang (Fearful-Avoidant Attachment)",
+      staticPdfUrl: "/assets/reports/sira-fearful.pdf",
+      fileName: "Laporan-Kelekatan-SIRA-Fearful-Jiwamu.pdf"
+    };
+  }
+  if (s.includes("avoidant") || s.includes("menghindar")) {
+    return {
+      slug: "sora",
+      namaChar: "SORA — Si Jaga Jarak (Avoidant Attachment)",
+      staticPdfUrl: "/assets/reports/sora-avoidant.pdf",
+      fileName: "Laporan-Kelekatan-SORA-Avoidant-Jiwamu.pdf"
+    };
+  }
+  return {
+    slug: "saka",
+    namaChar: "SAKA — Si Kalem (Secure Attachment)",
+    staticPdfUrl: "/assets/reports/saka-secure.pdf",
+    fileName: "Laporan-Kelekatan-SAKA-Secure-Jiwamu.pdf"
+  };
+}
 
 interface Question {
   id: number;
@@ -46,9 +92,112 @@ export default function TesKelekatan() {
   const [userUsia, setUserUsia] = useState("");
   const [userGender, setUserGender] = useState("");
   const [userKota, setUserKota] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReportSubmitted, setIsReportSubmitted] = useState(false);
 
+  // Pre-fetched PDF Blob URL state for instant 0-wait download after form submission
+  const [prefetchedPdfUrl, setPrefetchedPdfUrl] = useState<string | null>(null);
+  const [isPreparingPdf, setIsPreparingPdf] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  // Restore saved test result on mount so accidental mobile browser refreshes don't wipe progress
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const ageMs = Date.now() - Number(parsed.savedAt || 0);
+        // Keep valid for 24 hours
+        if (parsed.results && ageMs < 24 * 60 * 60 * 1000) {
+          setResults(parsed.results);
+          setIsReportSubmitted(Boolean(parsed.isReportSubmitted));
+          if (parsed.userNama) setUserNama(parsed.userNama);
+          setStep("result");
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
+  // Pre-fetch the matching PDF in the background as soon as result is calculated
+  useEffect(() => {
+    if (step !== "result" || !results) return;
+
+    let active = true;
+    let createdBlobUrl: string | null = null;
+    const meta = getReportMeta(results.style || results.title);
+
+    async function prefetchReportPdf() {
+      setIsPreparingPdf(true);
+      try {
+        // 1. Check static CDN file first (fastest on Vercel if PDF is present in public/assets/reports)
+        try {
+          const headRes = await fetch(meta.staticPdfUrl, { method: "HEAD" });
+          const contentType = headRes.headers.get("content-type") || "";
+          if (headRes.ok && contentType.toLowerCase().includes("application/pdf")) {
+            if (active) {
+              setPrefetchedPdfUrl(meta.staticPdfUrl);
+              setIsPreparingPdf(false);
+            }
+            return;
+          }
+        } catch {
+          // Proceed to Firestore chunked binary fallback
+        }
+
+        // 2. Fetch PDF binary chunks from Cloud Firestore `dokumen_files`
+        const metaSnap = await getDoc(firestoreDoc(db, "dokumen_files", `${meta.slug}_meta`));
+        if (metaSnap.exists()) {
+          const metaData = metaSnap.data();
+          const totalChunks = Number(metaData.totalChunks || 0);
+          if (totalChunks > 0) {
+            const chunkPromises = [];
+            for (let i = 0; i < totalChunks; i++) {
+              chunkPromises.push(getDoc(firestoreDoc(db, "dokumen_files", `${meta.slug}_chunk_${i}`)));
+            }
+            const chunkSnaps = await Promise.all(chunkPromises);
+            const orderedBase64 = chunkSnaps
+              .map(snap => (snap.exists() ? (snap.data().data as string) : ""))
+              .join("");
+
+            if (orderedBase64.length > 0) {
+              const pdfBytes = base64ToUint8Array(orderedBase64);
+              const blob = new Blob([pdfBytes], { type: "application/pdf" });
+              createdBlobUrl = URL.createObjectURL(blob);
+              if (active) {
+                setPrefetchedPdfUrl(createdBlobUrl);
+                setIsPreparingPdf(false);
+              }
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("PDF background prefetch notice:", err);
+      } finally {
+        if (active) {
+          setIsPreparingPdf(false);
+        }
+      }
+    }
+
+    prefetchReportPdf();
+
+    return () => {
+      active = false;
+      if (createdBlobUrl) {
+        URL.revokeObjectURL(createdBlobUrl);
+      }
+    };
+  }, [step, results?.style, results?.title]);
+
   const handleStart = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
     setAnswers({});
     setCurrentIdx(0);
     setUserNama("");
@@ -56,7 +205,9 @@ export default function TesKelekatan() {
     setUserUsia("");
     setUserGender("");
     setUserKota("");
+    setIsSubmitting(false);
     setIsReportSubmitted(false);
+    setPrefetchedPdfUrl(null);
     setStep("quiz");
   };
 
@@ -80,12 +231,66 @@ export default function TesKelekatan() {
     }
   };
 
-  const handleSendReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userNama || !userWhatsapp || !results) return;
+  const handleDirectDownloadPdf = async () => {
+    if (!results) return;
+    const meta = getReportMeta(results.style || results.title);
+    setIsDownloadingPdf(true);
 
     try {
-      await addDoc(collection(db, "test_results"), {
+      let targetUrl = prefetchedPdfUrl;
+
+      // If not yet prefetched, fetch on demand
+      if (!targetUrl) {
+        const metaSnap = await getDoc(firestoreDoc(db, "dokumen_files", `${meta.slug}_meta`));
+        if (metaSnap.exists()) {
+          const metaData = metaSnap.data();
+          const totalChunks = Number(metaData.totalChunks || 0);
+          if (totalChunks > 0) {
+            const chunkPromises = [];
+            for (let i = 0; i < totalChunks; i++) {
+              chunkPromises.push(getDoc(firestoreDoc(db, "dokumen_files", `${meta.slug}_chunk_${i}`)));
+            }
+            const chunkSnaps = await Promise.all(chunkPromises);
+            const orderedBase64 = chunkSnaps
+              .map(snap => (snap.exists() ? (snap.data().data as string) : ""))
+              .join("");
+
+            if (orderedBase64.length > 0) {
+              const pdfBytes = base64ToUint8Array(orderedBase64);
+              const blob = new Blob([pdfBytes], { type: "application/pdf" });
+              targetUrl = URL.createObjectURL(blob);
+              setPrefetchedPdfUrl(targetUrl);
+            }
+          }
+        }
+      }
+
+      if (targetUrl) {
+        const a = document.createElement("a");
+        a.href = targetUrl;
+        a.download = meta.fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        // Fallback to viewer page if direct blob couldn't be constructed
+        window.location.hash = `laporan/${meta.slug}`;
+      }
+    } catch (err) {
+      console.error("Error downloading PDF:", err);
+      window.location.hash = `laporan/${meta.slug}`;
+    } finally {
+      setTimeout(() => setIsDownloadingPdf(false), 800);
+    }
+  };
+
+  const handleSendReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userNama || !userWhatsapp || !results || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const writePromise = addDoc(collection(db, "test_results"), {
         nama: userNama.trim(),
         whatsapp: userWhatsapp.trim(),
         usia: userUsia ? Number(userUsia) || userUsia : "-",
@@ -96,11 +301,32 @@ export default function TesKelekatan() {
         avoidanceScore: results.avoidanceScore,
         tanggalTes: new Date().toISOString()
       });
+
+      // Race with 4s timeout so slow seminar hall signal never freezes the button (persistentLocalCache syncs in background)
+      await Promise.race([
+        writePromise,
+        new Promise((resolve) => setTimeout(resolve, 4000))
+      ]);
+
       setIsReportSubmitted(true);
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            results,
+            isReportSubmitted: true,
+            userNama: userNama.trim(),
+            savedAt: Date.now()
+          })
+        );
+      } catch {
+        // Ignore storage errors
+      }
     } catch (err) {
       console.error("Error saving test result to Firestore:", err);
-      // Fallback
       setIsReportSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -197,7 +423,7 @@ export default function TesKelekatan() {
       recommendation = "Luka kelekatan ganda (cemas & menghindar) sangat disarankan untuk diproses melalui pendampingan berkelanjutan. Kamu bisa memulai dengan sesi Pre-Treatment gratis di Jiwamu Center atau belajar menatanya di kelas Level 2 - Certification in Attachment Coaching (CAC).";
     }
 
-    setResults({
+    const computedResults = {
       style,
       anxietyScore: parseFloat(anxietyAvg.toFixed(2)),
       avoidanceScore: parseFloat(avoidanceAvg.toFixed(2)),
@@ -206,8 +432,23 @@ export default function TesKelekatan() {
       strengths,
       growth,
       recommendation
-    });
+    };
+
+    setResults(computedResults);
     setStep("result");
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          results: computedResults,
+          isReportSubmitted: false,
+          savedAt: Date.now()
+        })
+      );
+    } catch {
+      // Ignore storage errors
+    }
   };
 
   return (
@@ -357,29 +598,82 @@ export default function TesKelekatan() {
                 <p>{results.description}</p>
               </div>
 
-              {/* Form Kirim Hasil Lengkap */}
+              {/* Form Unduh Laporan Analisis Lengkap */}
               <div className="bg-[#BFDBFE] rounded-2xl p-6 sm:p-8 border-2 border-black mb-8 shadow-sm">
                 <span className="text-xs font-black uppercase tracking-widest text-[#1A1A1A] bg-[#FFD600] px-3.5 py-1.5 rounded-full w-fit mb-3 block border border-black shadow-sm">
-                  Dapatkan Analisis Lengkap
+                  Unduh Laporan Lengkap (PDF)
                 </span>
                 <h4 className="font-sans text-base sm:text-lg font-black text-[#1A1A1A] mb-2">
-                  Kirim Hasil Analisis Lengkap & Tips Relasional via WhatsApp
+                  Unduh Buku Laporan Analisis Lengkap & Panduan Relasional (PDF)
                 </h4>
-                <p className="text-xs text-slate-800 font-bold mb-4">
-                  Lengkapi data berikut untuk menerima dokumen analisis mendalam serta panduan langkah demi langkah memulihkan rasa aman batin via WhatsApp secara gratis.
+                <p className="text-xs text-slate-800 font-bold mb-4 leading-relaxed">
+                  Lengkapi data singkat berikut untuk langsung membuka dan mengunduh dokumen PDF analisis mendalam sesuai gaya kelekatan Anda secara gratis.
                 </p>
 
-                {isReportSubmitted ? (
-                  <div className="bg-[#D9F99D] border-2 border-black rounded-2xl p-5 text-xs flex gap-3 items-center brutal-shadow-sm">
-                    <span className="text-2xl">✨</span>
-                    <div>
-                      <p className="font-black text-sm text-black">Data Berhasil Terkirim!</p>
-                      <p className="text-slate-800 font-bold text-xs mt-1 leading-relaxed">
-                        Terima kasih! Data hasil asesmen Anda telah tercatat di sistem Jiwamu. Tim kami akan segera mengirimkan tautan laporan analisis lengkap melalui nomor WhatsApp Anda.
-                      </p>
+                {isReportSubmitted ? (() => {
+                  const meta = getReportMeta(results.style || results.title);
+                  return (
+                    <div className="bg-[#D9F99D] border-2 border-black rounded-2xl p-5 sm:p-6 text-xs space-y-4 brutal-shadow-sm animate-fade-in">
+                      <div className="flex gap-3 items-start">
+                        <div className="w-9 h-9 rounded-xl bg-white border-2 border-black flex items-center justify-center shrink-0 text-emerald-700">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-black text-sm text-black">
+                            Data Berhasil Disimpan! Laporan PDF Anda Siap Diunduh
+                          </p>
+                          <p className="text-slate-800 font-bold text-xs mt-1 leading-relaxed">
+                            Terima kasih{userNama ? `, ${userNama}` : ""}! Silakan klik tombol di bawah untuk langsung mengunduh file PDF laporan lengkap sesuai karakter kelekatan Anda:
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white border-2 border-black rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                        <div className="space-y-1 text-left">
+                          <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-black uppercase bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded border border-purple-300">
+                            <FileText className="w-3 h-3" />
+                            <span>Dokumen Resmi Jiwamu (PDF)</span>
+                          </div>
+                          <h5 className="font-black text-sm sm:text-base text-slate-950 pt-1">
+                            {meta.namaChar}
+                          </h5>
+                          <p className="text-[11px] text-slate-600 font-bold">
+                            Format PDF Resolusi Tinggi • Siap disimpan di HP / Laptop Anda
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={handleDirectDownloadPdf}
+                            disabled={isDownloadingPdf || isPreparingPdf}
+                            className="inline-flex items-center justify-center gap-2 bg-[#FFD600] hover:bg-[#ffe14d] disabled:opacity-60 text-slate-950 font-black text-xs px-5 py-3.5 rounded-xl border-2 border-black brutal-shadow-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer"
+                          >
+                            {isDownloadingPdf || isPreparingPdf ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Menyiapkan File PDF...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4" />
+                                <span>Unduh Laporan Lengkap (PDF)</span>
+                              </>
+                            )}
+                          </button>
+
+                          <a
+                            href={`#laporan/${meta.slug}`}
+                            className="inline-flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs px-4 py-3.5 rounded-xl border-2 border-black transition-all"
+                          >
+                            <BookOpen className="w-4 h-4" />
+                            <span>Baca di Browser</span>
+                          </a>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
+                  );
+                })() : (
                   <form onSubmit={handleSendReport} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
@@ -465,9 +759,20 @@ export default function TesKelekatan() {
                     <button
                       id="report-submit-btn"
                       type="submit"
-                      className="w-full bg-[#FF71CF] hover:bg-[#8B5CF6] hover:text-white text-black font-black text-xs px-6 py-3.5 rounded-xl transition-all cursor-pointer border-2 border-black shadow-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none mt-2"
+                      disabled={isSubmitting}
+                      className="w-full bg-[#FF71CF] hover:bg-[#8B5CF6] hover:text-white disabled:opacity-60 text-black font-black text-xs px-6 py-3.5 rounded-xl transition-all cursor-pointer border-2 border-black shadow-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none mt-2 inline-flex items-center justify-center gap-2"
                     >
-                      Kirim Analisis Lengkap
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Memproses & Membuka Laporan PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          <span>Simpan Data & Buka Laporan Lengkap (PDF)</span>
+                        </>
+                      )}
                     </button>
                   </form>
                 )}
