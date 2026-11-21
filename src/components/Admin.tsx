@@ -2757,12 +2757,14 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
             };
 
             testResults.forEach(r => {
-              const style = r.gayaKelekatan || "";
-              if (style.toLowerCase().includes("secure") || style.toLowerCase().includes("aman")) {
+              const s = (r.gayaKelekatan || "").toLowerCase();
+              if (s.includes("disorganized") || s.includes("fearful") || s.includes("ketakutan")) {
+                styleCounts["Disorganized"]++;
+              } else if (s.includes("secure") || s.includes("aman")) {
                 styleCounts["Secure"]++;
-              } else if (style.toLowerCase().includes("anxious") || style.toLowerCase().includes("cemas")) {
+              } else if (s.includes("anxious") || s.includes("cemas")) {
                 styleCounts["Anxious"]++;
-              } else if (style.toLowerCase().includes("avoidant") || style.toLowerCase().includes("menghindar") && !style.toLowerCase().includes("disorganized") && !style.toLowerCase().includes("ketakutan")) {
+              } else if (s.includes("avoidant") || s.includes("menghindar")) {
                 styleCounts["Avoidant"]++;
               } else {
                 styleCounts["Disorganized"]++;
@@ -3481,10 +3483,12 @@ Jiwamu juga menjadi bagian integral dari Pusat Usaha dan Kaderisasi Perkumpulan 
                   )
                   .map((res) => {
                     const style = res.gayaKelekatan || "";
+                    const lowerStyle = style.toLowerCase();
                     let colorClass = "bg-slate-200 text-slate-800";
-                    if (style.toLowerCase().includes("secure") || style.toLowerCase().includes("aman")) colorClass = "bg-[#D9F99D] text-black border-green-400";
-                    else if (style.toLowerCase().includes("anxious") || style.toLowerCase().includes("cemas")) colorClass = "bg-[#FEF08A] text-black border-yellow-400";
-                    else if (style.toLowerCase().includes("avoidant") || style.toLowerCase().includes("menghindar") && !style.toLowerCase().includes("disorganized")) colorClass = "bg-[#F97316] text-white border-orange-500";
+                    if (lowerStyle.includes("disorganized") || lowerStyle.includes("fearful") || lowerStyle.includes("ketakutan")) colorClass = "bg-[#8B5CF6] text-white border-purple-500";
+                    else if (lowerStyle.includes("secure") || lowerStyle.includes("aman")) colorClass = "bg-[#D9F99D] text-black border-green-400";
+                    else if (lowerStyle.includes("anxious") || lowerStyle.includes("cemas")) colorClass = "bg-[#FEF08A] text-black border-yellow-400";
+                    else if (lowerStyle.includes("avoidant") || lowerStyle.includes("menghindar")) colorClass = "bg-[#F97316] text-white border-orange-500";
                     else colorClass = "bg-[#8B5CF6] text-white border-purple-500";
 
                     return (
